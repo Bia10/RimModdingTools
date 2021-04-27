@@ -39,12 +39,12 @@ namespace RimModdingTools.XmlDocuments
         public List<ModDependency> ModDependencies;
         public string Description;
 
-        public static void PrintHeader(ModMetaData modMetaData)
+        public void PrintHeader()
         {
-            AnsiConsoleExtensions.Log($"Name: {modMetaData.Name} " + 
-                                      $"\n\t\t\t Author: {modMetaData.Author} " +
-                                      $"\n\t\t\t PackageId: {modMetaData.PackageId} " +
-                                      $"\n\t\t\t Url: {modMetaData.Url?.AbsolutePath}", "info");
+            AnsiConsoleExtensions.Log($"Name: {Name} " + 
+                                      $"\n\t\t\t Author: {Author} " +
+                                      $"\n\t\t\t PackageId: {PackageId} " +
+                                      $"\n\t\t\t Url: {Url?.AbsolutePath}", "info");
         }
 
         public static ModMetaData GetFromXml(string xml)
