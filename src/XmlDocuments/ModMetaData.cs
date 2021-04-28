@@ -78,6 +78,7 @@ namespace RimModdingTools.XmlDocuments
                         modInfo.PackageId = descendant.Value;
                         break;
                     case "url":
+                        if (descendant.Value == "") break;
                         modInfo.Url = new Uri(descendant.Value);
                         break;
                     case "supportedVersions":
