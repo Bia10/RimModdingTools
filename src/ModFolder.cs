@@ -36,6 +36,11 @@ namespace RimModdingTools
             return modMetaData;
         }
 
+        public bool IsOutdated()
+        {
+            return !LoadModMetaData().GetSupportedVersions().Contains("1.2");
+        }
+
         //Todo: other checks
         public bool IsValid()
         {

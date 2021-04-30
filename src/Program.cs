@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 //using SixLabors.ImageSharp.Processing;
 //using Spectre.Console;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
@@ -28,7 +29,7 @@ namespace RimModdingTools
                         case "About.xml":
                             var xml = File.ReadAllText(curFile.FullName);
                             var modInfo = ModMetaData.GetFromXml(xml);
-                            modInfo.PrintHeader();
+                            modInfo.PrintHeader(false);
                             break;
                         case "Preview.png" or "preview.png":
                             //var image = new CanvasImage(curFile.FullName);
@@ -59,7 +60,14 @@ namespace RimModdingTools
             }
 
             ScanForIncompatibleMods();
+            CheckForOutdatedMods();
             RenameWorkshopIdToModName();
+        }
+
+        private static void CheckForOutdatedMods()
+        {
+            foreach (var modFolder in LoadedModFolders.Where(modFolder => modFolder.IsOutdated())) 
+                AnsiConsoleExtensions.Log($"Outdated mod: {modFolder.Name}", "info");
         }
 
         private static void LoadModDirs(string dirPath)
@@ -71,11 +79,8 @@ namespace RimModdingTools
                 var dirInfo = new DirectoryInfo(modDir);
                 var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
 
-                if (!modFolder.IsValid())
-                {
-                    AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
-                    continue;
-                }
+                if (!modFolder.IsValid()) AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
+
 
                 var foldersInside = Directory.GetDirectories(modDir);
 

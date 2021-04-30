@@ -39,22 +39,40 @@ namespace RimModdingTools.XmlDocuments
         public List<ModDependency> ModDependencies;
         public string Description;
 
-        public void PrintHeader()
+        public void PrintHeader(bool withDescription)
         {
-            if (ModDependencies.Count > 0)
-            {
-                AnsiConsoleExtensions.Log($"Name: {Name} " +
-                                          $"\n\t\t\t Author: {Author} " +
-                                          $"\n\t\t\t PackageId: {PackageId} " +
-                                          $"\n\t\t\t ModDependencies.PackageId: {ModDependencies[0].PackageId} " +
-                                          $"\n\t\t\t Url: {Url?.AbsolutePath}", "info");
-                return;
-            }
+            var modstr = string.Empty;
 
-            AnsiConsoleExtensions.Log($"Name: {Name} " + 
-                                      $"\n\t\t\t Author: {Author} " +
-                                      $"\n\t\t\t PackageId: {PackageId} " +
-                                      $"\n\t\t\t Url: {Url?.AbsolutePath}", "info");
+            modstr += " \n\t\t\t ========ModInfo========";
+            modstr += $" \n\t\t\t Name: {Name}";
+            modstr += $" \n\t\t\t Author: {Author}";
+            modstr += $" \n\t\t\t PackageId: {PackageId}";
+            modstr += $" \n\t\t\t Uri: {Url?.AbsoluteUri}";
+            modstr += $" \n\t\t\t Versions:{GetSupportedVersions()}";
+            modstr += " \n\t\t\t ========LoadOrderStuff========";
+            modstr += $" \t\t\t {GetLoadOrderStuff()}";
+            if (withDescription) modstr += $" \n\t\t\t Description: {Description[..Math.Min(Description.Length, 100)]}";
+            modstr += "\n\t\t\t";
+
+            AnsiConsoleExtensions.Log(modstr, "info");
+        }
+
+        public string GetSupportedVersions()
+        {
+            var versions = SupportedVersions.Aggregate(string.Empty, (current, supportedVersion) 
+                => current + $", {supportedVersion.Major}.{supportedVersion.Minor}").Remove(0, 1);
+
+            return versions;
+        }
+
+        public string GetLoadOrderStuff()
+        {
+            var result = LoadAfter.Aggregate(string.Empty, (current, loadAfter) => current + $" \n\t\t\t LoadAfter: {loadAfter}");
+            result = LoadBefore.Aggregate(result, (current, loadBefore) => current + $" \n\t\t\t LoadBefore: {loadBefore}");
+            result = IncompatibleWith.Aggregate(result, (current, incompatibleWith) => current + $" \n\t\t\t IncompatibleWith: {incompatibleWith}");
+            result = ModDependencies.Aggregate(result, (current, modDependency) => current + $" \n\t\t\t ModDependencyName: {modDependency.DisplayName} \n\t\t\t ModDependencyPkgId: {modDependency.PackageId}");
+
+            return result;
         }
 
         public static ModMetaData GetFromXml(string xml)
