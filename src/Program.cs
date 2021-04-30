@@ -62,6 +62,34 @@ namespace RimModdingTools
             ScanForIncompatibleMods();
             CheckForOutdatedMods();
             RenameWorkshopIdToModName();
+            CheckIfMissingDependency();
+        }
+
+        public static List<string> GetDependenciesPackageIds()
+        {
+            var result = new List<string>();
+            foreach (var modFolder in LoadedModFolders)
+            {
+                var metaData = modFolder.LoadModMetaData();
+                foreach (var dependency in metaData.ModDependencies)
+                {
+                    if (result.Contains(dependency.PackageId)) continue;
+                    result.Add($"{dependency.PackageId}");
+                }
+            }
+            return result;
+        }
+
+        //TODO: reference to original game data core, roaylty
+        public static void CheckIfMissingDependency()
+        {
+            var dependenciesIds = GetDependenciesPackageIds();
+            var packageIds = LoadedModFolders.Select(modFolder => modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+
+            foreach (var dependencyId in dependenciesIds.Where(dependencyId => !packageIds.Contains(dependencyId)))
+            {
+                AnsiConsoleExtensions.Log($"Dependency not found: {dependencyId}", "warn");
+            }
         }
 
         private static void CheckForOutdatedMods()

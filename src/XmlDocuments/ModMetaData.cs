@@ -24,8 +24,8 @@ namespace RimModdingTools.XmlDocuments
         {
             public string PackageId;
             public string DisplayName;
-            public Uri SteamWorkshopUrl;
             public Uri DownloadUrl;
+            public Uri SteamWorkshopUrl;
         }
 
         public string Name;
@@ -70,7 +70,10 @@ namespace RimModdingTools.XmlDocuments
             var result = LoadAfter.Aggregate(string.Empty, (current, loadAfter) => current + $" \n\t\t\t LoadAfter: {loadAfter}");
             result = LoadBefore.Aggregate(result, (current, loadBefore) => current + $" \n\t\t\t LoadBefore: {loadBefore}");
             result = IncompatibleWith.Aggregate(result, (current, incompatibleWith) => current + $" \n\t\t\t IncompatibleWith: {incompatibleWith}");
-            result = ModDependencies.Aggregate(result, (current, modDependency) => current + $" \n\t\t\t ModDependencyName: {modDependency.DisplayName} \n\t\t\t ModDependencyPkgId: {modDependency.PackageId}");
+            result = ModDependencies.Aggregate(result, (current, modDependency) => current + $" \n\t\t\t ModDependencyName: {modDependency.DisplayName}" +
+                $" \n\t\t\t ModDependencyPkgId: {modDependency.PackageId}  " +
+                $" \n\t\t\t DownloadUrl: {modDependency.DownloadUrl} " +
+                $" \n\t\t\t SteamWorkshopUrl: { modDependency.SteamWorkshopUrl} ");
 
             return result;
         }
