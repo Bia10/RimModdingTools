@@ -62,6 +62,33 @@ namespace RimModdingTools
             }
 
             ScanForIncompatibleMods();
+            RenameWorkshopIdToModName();
+        }
+
+        private static bool IsDigitOnly(string str)
+        {
+            return str.All(char.IsDigit);
+        }
+
+        private static void RenameWorkshopIdToModName()
+        {
+            foreach (var modFolder in LoadedModFolders)
+            {
+                if (!IsDigitOnly(modFolder.Name)) continue;
+
+                var modName = modFolder.GetModName();
+
+                string[] illegalChars = { "<", ">", ":", "\"", "/", "\\", "|", "?", "*"};
+                foreach (var @char in illegalChars)
+                {
+                    if (modName.Contains(@char))
+                        modName = modName.Replace(@char, "");
+                }
+
+                AnsiConsoleExtensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
+                modFolder.Name = modName;
+                RenameFolder(modFolder.Path, modName);
+            }
         }
 
         private static void LoadModDirs(string dirPath)
@@ -70,7 +97,8 @@ namespace RimModdingTools
 
             foreach (var modDir in modDirs)
             {
-                var modFolder = new ModFolder();
+                var dirInfo = new DirectoryInfo(modDir);
+                var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
                 var foldersInside = Directory.GetDirectories(modDir);
 
                 foreach (var folder in foldersInside)
@@ -167,5 +195,65 @@ namespace RimModdingTools
                 }
             }
         }
+
+        /// <summary>
+        /// Renames a folder name
+        /// </summary>
+        /// <param name="directory">The full directory of the folder</param>
+        /// <param name="newFolderName">New name of the folder</param>
+        /// <returns>Returns true if rename is successfull</returns>
+        public static bool RenameFolder(string directory, string newFolderName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(directory) ||
+                    string.IsNullOrWhiteSpace(newFolderName))
+                {
+                    return false;
+                }
+
+
+                var oldDirectory = new DirectoryInfo(directory);
+
+                if (!oldDirectory.Exists)
+                {
+                    return false;
+                }
+
+                if (string.Equals(oldDirectory.Name, newFolderName, StringComparison.OrdinalIgnoreCase))
+                {
+                    //new folder name is the same with the old one.
+                    return false;
+                }
+
+                string newDirectory;
+
+                if (oldDirectory.Parent == null)
+                {
+                    //root directory
+                    newDirectory = Path.Combine(directory, newFolderName);
+                }
+                else
+                {
+                    newDirectory = Path.Combine(oldDirectory.Parent.FullName, newFolderName);
+                }
+
+                if (Directory.Exists(newDirectory))
+                {
+                    //target directory already exists
+                    return false;
+                }
+
+                oldDirectory.MoveTo(newDirectory);
+
+                return true;
+            }
+            catch
+            {
+                //ignored
+                return false;
+            }
+        }
+
     }
 }
