@@ -41,6 +41,16 @@ namespace RimModdingTools.XmlDocuments
 
         public void PrintHeader()
         {
+            if (ModDependencies.Count > 0)
+            {
+                AnsiConsoleExtensions.Log($"Name: {Name} " +
+                                          $"\n\t\t\t Author: {Author} " +
+                                          $"\n\t\t\t PackageId: {PackageId} " +
+                                          $"\n\t\t\t ModDependencies.PackageId: {ModDependencies[0].PackageId} " +
+                                          $"\n\t\t\t Url: {Url?.AbsolutePath}", "info");
+                return;
+            }
+
             AnsiConsoleExtensions.Log($"Name: {Name} " + 
                                       $"\n\t\t\t Author: {Author} " +
                                       $"\n\t\t\t PackageId: {PackageId} " +
@@ -75,6 +85,7 @@ namespace RimModdingTools.XmlDocuments
                         modInfo.Author = descendant.Value;
                         break;
                     case "packageId":
+                        if (descendant.Parent.Name.Equals("li")) break; // were in modDependencies list
                         modInfo.PackageId = descendant.Value;
                         break;
                     case "url":

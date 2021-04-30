@@ -1,6 +1,8 @@
 ﻿using RimModdingTools.XmlDocuments;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 //using SixLabors.ImageSharp.Processing;
 //using Spectre.Console;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
@@ -17,6 +19,7 @@ namespace RimModdingTools
             LoadModDirs(dirPath);
 
             AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
+
             foreach (var modFolders in LoadedModFolders)
             {
                 var modFiles = Directory.GetFiles(modFolders.About.FullName);
@@ -57,6 +60,8 @@ namespace RimModdingTools
                     }
                 }
             }
+
+            ScanForIncompatibleMods();
         }
 
         private static void LoadModDirs(string dirPath)
@@ -119,6 +124,47 @@ namespace RimModdingTools
                 }
 
                 LoadedModFolders.Add(modFolder);
+            }
+        }
+
+        private static void ScanForIncompatibleMods()
+        {
+            var modNames = new List<string>();
+            var modPackages = new List<string>();
+            var modIncompatibleLists = new List<Tuple<List<string>, string>>();
+            foreach (var modFolder in LoadedModFolders)
+            {
+                var aboutFile = Directory.GetFiles(modFolder.About.FullName).First(file => file.Contains("About.xml"));
+                var xmlText = File.ReadAllText(aboutFile);
+                var modMetaData = ModMetaData.GetFromXml(xmlText);
+
+                var modName = modMetaData.Name;
+                var modPackage = modMetaData.PackageId;
+                modNames.Add(modName);
+                modPackages.Add(modPackage);
+
+                var incompatibleNames = modMetaData.IncompatibleWith;
+                if (incompatibleNames.Count > 0)
+                {
+                    modIncompatibleLists.Add(new Tuple<List<string>, string>(incompatibleNames, modName));
+                }
+            }
+
+            for (var i = 0; i < modPackages.Count; i++)
+            {
+                var modPackage = modPackages[i];
+                var curModName = modNames[i];
+
+                foreach (var (incompatibleNames, modName) in modIncompatibleLists)
+                {
+                    foreach (var incompatibleName in incompatibleNames)
+                    {
+                        if (incompatibleName.Equals(modPackage))
+                        {
+                            AnsiConsoleExtensions.Log($"Incompatible mods found! Mod1: {modName} with Mod2: {curModName}", "warn");
+                        }
+                    }
+                }
             }
         }
     }
