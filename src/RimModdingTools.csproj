@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="GuiLabs.Language.Xml" Version="1.2.46" />
     <PackageReference Include="Spectre.Console" Version="0.39.0" />
+    <PackageReference Include="Spectre.Console.ImageSharp" Version="0.39.0" />
   </ItemGroup>
 
 </Project>

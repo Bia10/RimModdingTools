@@ -1,6 +1,8 @@
 ﻿using RimModdingTools.XmlDocuments;
 using System.Collections.Generic;
 using System.IO;
+//using SixLabors.ImageSharp.Processing;
+//using Spectre.Console;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
 namespace RimModdingTools
@@ -17,15 +19,42 @@ namespace RimModdingTools
             AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
             foreach (var modFolders in LoadedModFolders)
             {
-                foreach (var file in Directory.GetFiles(modFolders.About.Name))
+                var modFiles = Directory.GetFiles(modFolders.About.FullName);
+                foreach (var file in modFiles)
                 {
                     var curFile = new FileInfo(file);
-                    if (curFile.Name != "About.xml") continue;
-
-                    var xml = File.ReadAllText(curFile.FullName);
-                    var modInfo = ModMetaData.GetFromXml(xml);
-
-                    modInfo.PrintHeader();
+                    switch (curFile.Name)
+                    {
+                        case "About.xml":
+                            var xml = File.ReadAllText(curFile.FullName);
+                            var modInfo = ModMetaData.GetFromXml(xml);
+                            modInfo.PrintHeader();
+                            break;
+                        case "Preview.png" or "preview.png":
+                            //var image = new CanvasImage(curFile.FullName);
+                            //image.MaxWidth(64);
+                            //AnsiConsole.Render(image);
+                            break;
+                        case "PublishedFileId.txt":
+                            var workshopId = File.ReadAllText(curFile.FullName);
+                            break;
+                        case "Version.xml":
+                            var version = File.ReadAllText(curFile.FullName);
+                            break;
+                        case "ModSync.xml":
+                            var modSync = File.ReadAllText(curFile.FullName);
+                            break;
+                        case "LoadFolders.xml":
+                            var loadFolders = File.ReadAllText(curFile.FullName);
+                            break;
+                        case "Manifest.xml":
+                            var manifest = File.ReadAllText(curFile.FullName);
+                            break;
+                        
+                        default:
+                            //AnsiConsoleExtensions.Log($"curfilename: {curFile.Name}", "info");
+                             break;
+                    }
                 }
             }
         }
