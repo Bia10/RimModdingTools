@@ -1,7 +1,7 @@
-﻿using RimModdingTools.XmlDocuments;
+﻿using RimModdingTools.Utils;
+using RimModdingTools.XmlDocuments;
 using System.IO;
 using System.Linq;
-using RimModdingTools.Utils;
 
 namespace RimModdingTools
 {

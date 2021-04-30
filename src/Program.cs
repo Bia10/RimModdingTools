@@ -17,6 +17,7 @@ namespace RimModdingTools
         {
             LoadModDirs(@"C:\Games\RimWorld\Mods\");
             AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
+            LoadModConfig();
 
             foreach (var modFolders in LoadedModFolders)
             {
@@ -63,6 +64,16 @@ namespace RimModdingTools
             CheckForOutdatedMods();
             RenameWorkshopIdToModName();
             CheckIfMissingDependency();
+        }
+
+        public static void LoadModConfig()
+        {
+            var pathToLocalLow = @"%userprofile%\appdata\locallow";
+            var pathToConfig = @"\Ludeon Studios\RimWorld by Ludeon Studios\Config\";
+            var configName = "ModsConfig.xml";
+            var path = Environment.ExpandEnvironmentVariables(pathToLocalLow + pathToConfig + configName);
+            var xml = File.ReadAllText(path);
+            var modInfo = ModsConfigData.GetFromXml(xml);
         }
 
         public static IEnumerable<string> GetDependenciesPackageIds()
