@@ -7,22 +7,6 @@ namespace RimModdingTools
 {
     static class Program
     {
-        public class ModFolder
-        {
-            public DirectoryInfo VersionOneZero;
-            public DirectoryInfo VersionOneOne;
-            public DirectoryInfo VersionOneTwo;
-            public DirectoryInfo About;
-            public DirectoryInfo Assemblies;
-            public DirectoryInfo Defs;
-            public DirectoryInfo Languages;
-            public DirectoryInfo News;
-            public DirectoryInfo Patches;
-            public DirectoryInfo Sounds;
-            public DirectoryInfo Textures; 
-            public DirectoryInfo Source;
-        }
-
         static List<ModFolder> LoadedModFolders = new();
 
         static void Main()
@@ -93,7 +77,7 @@ namespace RimModdingTools
                         case "Textures":
                             modFolder.Textures = currentModDir;
                             break;
-                        case "Source" or "source" or"src":
+                        case "Source" or "source" or "src":
                             modFolder.Source = currentModDir;
                             break;
                         case ".git" or ".vs" or "packages":
