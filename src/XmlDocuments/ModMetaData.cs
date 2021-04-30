@@ -8,12 +8,12 @@ namespace RimModdingTools.XmlDocuments
 {
     public class ModMetaData
     {
-        public class Version
+        public class CompatibleVersions
         {
             public int Major;
             public int Minor;
 
-            public Version(int major, int minor)
+            public CompatibleVersions(int major, int minor)
             {
                 Major = major;
                 Minor = minor;
@@ -32,7 +32,7 @@ namespace RimModdingTools.XmlDocuments
         public string Author;
         public string PackageId;
         public Uri Url;
-        public List<Version> SupportedVersions;
+        public List<CompatibleVersions> SupportedVersions;
         public List<string> LoadAfter;
         public List<string> LoadBefore;
         public List<string> IncompatibleWith;
@@ -89,7 +89,7 @@ namespace RimModdingTools.XmlDocuments
                 if (descendant.Name.Equals("ModMetaData"))
                     modInfo = new ModMetaData()
                     {
-                        SupportedVersions = new List<Version>(),
+                        SupportedVersions = new List<CompatibleVersions>(),
                         LoadBefore = new List<string>(),
                         LoadAfter = new List<string>(),
                         IncompatibleWith = new List<string>(),
@@ -120,7 +120,7 @@ namespace RimModdingTools.XmlDocuments
                             var major = int.Parse(majorAndMinor[0]);
                             var minor = int.Parse(majorAndMinor[1]);
 
-                            modInfo.SupportedVersions.Add(new Version(major, minor));
+                            modInfo.SupportedVersions.Add(new CompatibleVersions(major, minor));
                         }
                         break;
                     case "loadAfter":

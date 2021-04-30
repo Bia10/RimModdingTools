@@ -12,12 +12,13 @@ namespace RimModdingTools
     static class Program
     {
         static List<ModFolder> LoadedModFolders = new();
+        private static ModsConfigData LoadedModConfig = new();
 
         private static void Main()
         {
             LoadModDirs(@"C:\Games\RimWorld\Mods\");
-            AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
             LoadModConfig();
+            AnsiConsoleExtensions.Log($"ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
             foreach (var modFolders in LoadedModFolders)
             {
@@ -73,7 +74,8 @@ namespace RimModdingTools
             var configName = "ModsConfig.xml";
             var path = Environment.ExpandEnvironmentVariables(pathToLocalLow + pathToConfig + configName);
             var xml = File.ReadAllText(path);
-            var modInfo = ModsConfigData.GetFromXml(xml);
+
+            LoadedModConfig = ModsConfigData.GetFromXml(xml);
         }
 
         public static IEnumerable<string> GetDependenciesPackageIds()
