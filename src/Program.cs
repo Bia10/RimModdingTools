@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 //using SixLabors.ImageSharp.Processing;
 //using Spectre.Console;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
@@ -15,9 +14,7 @@ namespace RimModdingTools
 
         static void Main()
         {
-            var dirPath = @"C:\Games\RimWorld\Mods\";
-            LoadModDirs(dirPath);
-
+            LoadModDirs(@"C:\Games\RimWorld\Mods\");
             AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
 
             foreach (var modFolders in LoadedModFolders)
@@ -65,32 +62,6 @@ namespace RimModdingTools
             RenameWorkshopIdToModName();
         }
 
-        private static bool IsDigitOnly(string str)
-        {
-            return str.All(char.IsDigit);
-        }
-
-        private static void RenameWorkshopIdToModName()
-        {
-            foreach (var modFolder in LoadedModFolders)
-            {
-                if (!IsDigitOnly(modFolder.Name)) continue;
-
-                var modName = modFolder.GetModName();
-
-                string[] illegalChars = { "<", ">", ":", "\"", "/", "\\", "|", "?", "*"};
-                foreach (var @char in illegalChars)
-                {
-                    if (modName.Contains(@char))
-                        modName = modName.Replace(@char, "");
-                }
-
-                AnsiConsoleExtensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
-                modFolder.Name = modName;
-                RenameFolder(modFolder.Path, modName);
-            }
-        }
-
         private static void LoadModDirs(string dirPath)
         {
             var modDirs = Directory.GetDirectories(dirPath);
@@ -99,6 +70,13 @@ namespace RimModdingTools
             {
                 var dirInfo = new DirectoryInfo(modDir);
                 var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
+
+                if (!modFolder.IsValid())
+                {
+                    AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
+                    continue;
+                }
+
                 var foldersInside = Directory.GetDirectories(modDir);
 
                 foreach (var folder in foldersInside)
@@ -155,6 +133,25 @@ namespace RimModdingTools
             }
         }
 
+        private static void RenameWorkshopIdToModName()
+        {
+            foreach (var modFolder in LoadedModFolders)
+            {
+                if (!Util.IsDigitOnly(modFolder.Name)) continue;
+
+                var modName = modFolder.LoadModMetaData().Name;
+
+                string[] illegalChars = { "<", ">", ":", "\"", "/", "\\", "|", "?", "*"};
+                foreach (var @char in illegalChars)
+                    if (modName.Contains(@char))
+                        modName = modName.Replace(@char, "");
+                
+                AnsiConsoleExtensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
+                modFolder.Name = modName;
+                Util.RenameFolder(modFolder.Path, modName);
+            }
+        }
+
         private static void ScanForIncompatibleMods()
         {
             var modNames = new List<string>();
@@ -162,10 +159,7 @@ namespace RimModdingTools
             var modIncompatibleLists = new List<Tuple<List<string>, string>>();
             foreach (var modFolder in LoadedModFolders)
             {
-                var aboutFile = Directory.GetFiles(modFolder.About.FullName).First(file => file.Contains("About.xml"));
-                var xmlText = File.ReadAllText(aboutFile);
-                var modMetaData = ModMetaData.GetFromXml(xmlText);
-
+                var modMetaData = modFolder.LoadModMetaData();
                 var modName = modMetaData.Name;
                 var modPackage = modMetaData.PackageId;
                 modNames.Add(modName);
@@ -195,65 +189,5 @@ namespace RimModdingTools
                 }
             }
         }
-
-        /// <summary>
-        /// Renames a folder name
-        /// </summary>
-        /// <param name="directory">The full directory of the folder</param>
-        /// <param name="newFolderName">New name of the folder</param>
-        /// <returns>Returns true if rename is successfull</returns>
-        public static bool RenameFolder(string directory, string newFolderName)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(directory) ||
-                    string.IsNullOrWhiteSpace(newFolderName))
-                {
-                    return false;
-                }
-
-
-                var oldDirectory = new DirectoryInfo(directory);
-
-                if (!oldDirectory.Exists)
-                {
-                    return false;
-                }
-
-                if (string.Equals(oldDirectory.Name, newFolderName, StringComparison.OrdinalIgnoreCase))
-                {
-                    //new folder name is the same with the old one.
-                    return false;
-                }
-
-                string newDirectory;
-
-                if (oldDirectory.Parent == null)
-                {
-                    //root directory
-                    newDirectory = Path.Combine(directory, newFolderName);
-                }
-                else
-                {
-                    newDirectory = Path.Combine(oldDirectory.Parent.FullName, newFolderName);
-                }
-
-                if (Directory.Exists(newDirectory))
-                {
-                    //target directory already exists
-                    return false;
-                }
-
-                oldDirectory.MoveTo(newDirectory);
-
-                return true;
-            }
-            catch
-            {
-                //ignored
-                return false;
-            }
-        }
-
     }
 }

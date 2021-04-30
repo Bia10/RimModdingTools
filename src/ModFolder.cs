@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿using RimModdingTools.XmlDocuments;
+using System.IO;
 using System.Linq;
-using RimModdingTools.XmlDocuments;
 
 namespace RimModdingTools
 {
@@ -27,20 +27,23 @@ namespace RimModdingTools
             Path = path;
         }
 
-        public string GetModName()
+        public ModMetaData LoadModMetaData()
         {
             var aboutFile = Directory.GetFiles(About.FullName).First(file => file.Contains("About.xml"));
             var xmlText = File.ReadAllText(aboutFile);
             var modMetaData = ModMetaData.GetFromXml(xmlText);
 
-            return modMetaData.Name;
+            return modMetaData;
         }
 
         //Todo: other checks
         public bool IsValid()
         {
-            return VersionOneZero != null || VersionOneOne != null || VersionOneTwo != null 
-                   || Assemblies != null || Defs != null;
+            return VersionOneZero == null || VersionOneZero != null && VersionOneZero.GetFiles().Length == 0
+                   && VersionOneOne == null || VersionOneOne != null && VersionOneOne.GetFiles().Length == 0 
+                   && VersionOneTwo == null || VersionOneTwo != null && VersionOneTwo.GetFiles().Length == 0
+                   && Assemblies == null || Assemblies != null && Assemblies.GetFiles().Length == 0
+                   && Defs == null || Defs != null && Defs.GetFiles().Length == 0;
         }
     }
 }
