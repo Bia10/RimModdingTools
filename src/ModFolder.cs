@@ -1,6 +1,7 @@
 ﻿using RimModdingTools.XmlDocuments;
 using System.IO;
 using System.Linq;
+using RimModdingTools.Utils;
 
 namespace RimModdingTools
 {
@@ -38,7 +39,17 @@ namespace RimModdingTools
 
         public bool IsOutdated()
         {
-            return !LoadModMetaData().GetSupportedVersions().Contains("1.2");
+            var versionFile = Directory.GetFiles(About.Parent.Parent.Parent.FullName, "Version.txt").First();
+            if (versionFile == "" || !versionFile.Equals(new FileInfo(versionFile).FullName))
+                AnsiConsoleExtensions.Log("Version file not found in game dir!","warn");
+
+            var versionString = File.ReadAllText(versionFile);
+            var majorAndMinor = versionString.Substring(0, 3);
+            var majorAndMinorSplit = majorAndMinor.Split(".", 2);
+            var major = majorAndMinorSplit[0];
+            var minor = majorAndMinorSplit[1];
+
+            return !LoadModMetaData().GetSupportedVersions().Contains($"{major}.{minor}");
         }
 
         //Todo: other checks

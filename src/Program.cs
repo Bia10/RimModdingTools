@@ -13,7 +13,7 @@ namespace RimModdingTools
     {
         static List<ModFolder> LoadedModFolders = new();
 
-        static void Main()
+        private static void Main()
         {
             LoadModDirs(@"C:\Games\RimWorld\Mods\");
             AnsiConsoleExtensions.Log($"{LoadedModFolders.Count}", "warn");
@@ -65,7 +65,7 @@ namespace RimModdingTools
             CheckIfMissingDependency();
         }
 
-        public static List<string> GetDependenciesPackageIds()
+        public static IEnumerable<string> GetDependenciesPackageIds()
         {
             var result = new List<string>();
             foreach (var modFolder in LoadedModFolders)
@@ -88,6 +88,9 @@ namespace RimModdingTools
 
             foreach (var dependencyId in dependenciesIds.Where(dependencyId => !packageIds.Contains(dependencyId)))
             {
+                if (dependencyId.Equals("Ludeon.RimWorld") || dependencyId.Equals("Ludeon.RimWorld.Royalty"))
+                    return;
+                
                 AnsiConsoleExtensions.Log($"Dependency not found: {dependencyId}", "warn");
             }
         }
