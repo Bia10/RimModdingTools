@@ -11,7 +11,7 @@ namespace RimModdingTools
 {
     static class Program
     {
-        static List<ModFolder> LoadedModFolders = new();
+        private static List<ModFolder> LoadedModFolders = new();
         private static ModsConfigData LoadedModConfig = new();
 
         private static void Main()
@@ -20,6 +20,16 @@ namespace RimModdingTools
             LoadModConfig();
             AnsiConsoleExtensions.Log($"ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
+            ParseModFolders();
+            ScanForIncompatibleMods();
+            CheckForOutdatedMods();
+            RenameWorkshopIdToModName();
+            CheckIfMissingDependency();
+            CheckActiveModsAgainstLocalMods();
+        }
+
+        public static void ParseModFolders()
+        {
             foreach (var modFolders in LoadedModFolders)
             {
                 var modFiles = Directory.GetFiles(modFolders.About.FullName);
@@ -53,18 +63,25 @@ namespace RimModdingTools
                         case "Manifest.xml":
                             var manifest = File.ReadAllText(curFile.FullName);
                             break;
-                        
+
                         default:
                             //AnsiConsoleExtensions.Log($"curfilename: {curFile.Name}", "info");
-                             break;
+                            break;
                     }
                 }
             }
+        }
 
-            ScanForIncompatibleMods();
-            CheckForOutdatedMods();
-            RenameWorkshopIdToModName();
-            CheckIfMissingDependency();
+        public static void CheckActiveModsAgainstLocalMods()
+        {
+            var activeMods = LoadedModConfig.ActiveMods;
+            var localMods = LoadedModFolders.Select(modFolder => modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+            var modsNotFound = activeMods.Where(activeMod => !localMods.Contains(activeMod));
+
+            foreach (var notFoundMod in modsNotFound)
+                AnsiConsoleExtensions.Log($"Modlist references mod not found localy: {notFoundMod}", "warn");
+
+            //TODO: obtain mod
         }
 
         public static void LoadModConfig()
