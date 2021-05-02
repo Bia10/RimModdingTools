@@ -18,13 +18,12 @@ namespace RimModdingTools
             var indexOfStart = input.IndexOf(start, StringComparison.Ordinal) + start.Length;
             var indexOfEnd = input.IndexOf(end, indexOfStart, StringComparison.Ordinal);
 
-            return end == "" ? input[indexOfStart..] : input[indexOfStart..indexOfEnd];
+            return string.IsNullOrEmpty(end) ? input[indexOfStart..] : input[indexOfStart..indexOfEnd];
         }
 
         public static HttpStatusCode GetUrlStatus(string url, string userAgent)
         {
             var result = default(HttpStatusCode);
-
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.UserAgent = userAgent;
             request.Method = "HEAD";

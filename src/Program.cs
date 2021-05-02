@@ -1,12 +1,12 @@
 ﻿using HtmlAgilityPack;
 using RimModdingTools.XmlDocuments;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 //using SixLabors.ImageSharp.Processing;
-//using Spectre.Console;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
 namespace RimModdingTools
@@ -27,17 +27,12 @@ namespace RimModdingTools
 
             AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
-            var localMetaData = LoadedModFolders.Select(modFolder
-                => modFolder.LoadModMetaData()).ToList();
-
-            GetWorkshopIdFromModName(localMetaData[4]);
-
             //ParseModFolders();
             //RenameWorkshopIdToModName();
             //CheckForIncompatibleMods();
             //CheckForOutdatedMods();
             //CheckIfMissingDependency();
-            //CheckActiveModsAgainstLocalMods();
+            CheckActiveModsAgainstLocalMods();
         }
 
         public static void ParseModFolders()
@@ -84,28 +79,28 @@ namespace RimModdingTools
             }
         }
 
-        public static int GetWorkshopIdFromModName(ModMetaData modMetaData)
+        public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable
         {
             const string rimSearchUri = @"https://steamcommunity.com/workshop/browse/?appid=294100&searchtext=";
-            var modNameUri = modMetaData.Name.Replace(" ", "+");
-            var modSearchUri = rimSearchUri + modNameUri;
-
-            const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
-            var result = Util.GetUrlStatus(modSearchUri, userAgent);
+            var packageIdSplit = packageId.Replace(".", "+");
+            var modSearchUri = rimSearchUri + packageIdSplit;
+            var result = Util.GetUrlStatus(modSearchUri,
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
             if (result != HttpStatusCode.OK)
             {
                 AnsiConsoleExtensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
                 return 0;
             }
-            
+
             var web = new HtmlWeb();
             var document = web.Load(modSearchUri);
 
-            var allModTitlesOnPage = document.DocumentNode.SelectNodes("//div[contains(@class, 'workshopItemTitle ellipsis')]");
-            foreach (var modTitle in allModTitlesOnPage)
+            foreach (var modTitle in document.DocumentNode
+                .SelectNodes("//div[contains(@class, 'workshopItemTitle ellipsis')]"))
             {
                 var modName = modTitle.InnerHtml;
-                if (!modName.Equals(modMetaData.Name)) continue;
+                var modNameNoWs = modName.Replace(" ", "");
+                if (!packageIdSplit.Contains(modName) && !packageIdSplit.Contains(modNameNoWs)) continue;
 
                 var hrefNode = modTitle.ParentNode.OuterHtml;
                 var workshopId = Util.StringBetweenStrings(hrefNode, "?id=", "&");
@@ -114,22 +109,31 @@ namespace RimModdingTools
                 return int.Parse(workshopId);
             }
 
-            AnsiConsoleExtensions.Log("Failed find the mod among results!", "warn");
+            AnsiConsoleExtensions.Log("Failed to find the mod among results!", "warn");
             return 0;
         }
 
         public static void CheckActiveModsAgainstLocalMods()
         {
             var activeMods = LoadedModConfig.ActiveMods;
-            var localMods = LoadedModFolders.Select(modFolder 
-                => modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
-            var modsNotFound = activeMods.Where(activeMod
-                => !localMods.Contains(activeMod));
+            var localMods = LoadedModFolders.Select(modFolder =>
+                modFolder.LoadModMetaData()).Select(metaData =>
+                metaData.PackageId).ToList();
+            var modsNotFound = activeMods.Where(activeMod =>
+                !localMods.Contains(activeMod));
 
             foreach (var notFoundMod in modsNotFound)
+            {
+                if (notFoundMod.Equals("ludeon.rimworld") || notFoundMod.Equals("ludeon.rimworld.royalty")) continue;
                 AnsiConsoleExtensions.Log($"Modlist references mod not found localy: {notFoundMod}", "warn");
+                var response = AnsiConsole.Confirm("[green]Would you like to download missing mods?[/]:");
 
-            //TODO: obtain mod
+                if (response)
+                {
+                    var workshopId = GetWorkshopIdFromPackageId(notFoundMod);
+                    //TODO: download via steamCMD
+                }
+            }
         }
 
         public static void LoadModConfig()
