@@ -12,18 +12,23 @@ namespace RimModdingTools
     static class Program
     {
         private static List<ModFolder> LoadedModFolders = new();
+        private static List<ModFolder> LoadedDataFolders = new();
         private static ModsConfigData LoadedModConfig = new();
 
         private static void Main()
         {
-            LoadModDirs(@"C:\Games\RimWorld\Mods\");
+            const string pathToRim = @"C:\Games\RimWorld";
+
+            LoadDataDirs(pathToRim + @"\Data\");
+            LoadModDirs(pathToRim + @"\Mods\");
             LoadModConfig();
-            AnsiConsoleExtensions.Log($"ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
+
+            AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
             ParseModFolders();
-            ScanForIncompatibleMods();
-            CheckForOutdatedMods();
             RenameWorkshopIdToModName();
+            CheckForIncompatibleMods();
+            CheckForOutdatedMods();
             CheckIfMissingDependency();
             CheckActiveModsAgainstLocalMods();
         }
@@ -86,9 +91,9 @@ namespace RimModdingTools
 
         public static void LoadModConfig()
         {
-            var pathToLocalLow = @"%userprofile%\appdata\locallow";
-            var pathToConfig = @"\Ludeon Studios\RimWorld by Ludeon Studios\Config\";
-            var configName = "ModsConfig.xml";
+            const string pathToLocalLow = @"%userprofile%\appdata\locallow";
+            const string pathToConfig = @"\Ludeon Studios\RimWorld by Ludeon Studios\Config\";
+            const string configName = "ModsConfig.xml";
             var path = Environment.ExpandEnvironmentVariables(pathToLocalLow + pathToConfig + configName);
             var xml = File.ReadAllText(path);
 
@@ -110,18 +115,26 @@ namespace RimModdingTools
             return result;
         }
 
-        //TODO: reference to original game data core, roaylty
         public static void CheckIfMissingDependency()
         {
             var dependenciesIds = GetDependenciesPackageIds();
-            var packageIds = LoadedModFolders.Select(modFolder => modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+            var modPackageIds = LoadedModFolders.Select(modFolder => 
+                modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+            var dataPackageIds = LoadedDataFolders.Select(dataFolder =>
+                dataFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
 
-            foreach (var dependencyId in dependenciesIds.Where(dependencyId => !packageIds.Contains(dependencyId)))
+            foreach (var dependencyId in dependenciesIds.Where(dependencyId => !modPackageIds.Contains(dependencyId)))
             {
-                if (dependencyId.Equals("Ludeon.RimWorld") || dependencyId.Equals("Ludeon.RimWorld.Royalty"))
-                    return;
-                
-                AnsiConsoleExtensions.Log($"Dependency not found: {dependencyId}", "warn");
+                const string rimCore = "Ludeon.RimWorld";
+                const string rimRoyalty = "Ludeon.RimWorld.Royalty";
+
+                if (dependencyId.Equals(rimCore) || dependencyId.Equals(rimRoyalty))
+                {
+                    if (!dataPackageIds.Contains(rimCore) || !dataPackageIds.Contains(rimRoyalty))
+                        AnsiConsoleExtensions.Log($"Core dependency not found: {dependencyId}", "warn");
+                    continue;
+                }
+                AnsiConsoleExtensions.Log($"Mod dependency not found: {dependencyId}", "warn");
             }
         }
 
@@ -131,21 +144,43 @@ namespace RimModdingTools
                 AnsiConsoleExtensions.Log($"Outdated mod: {modFolder.Name}", "info");
         }
 
+        private static void LoadDataDirs(string dirPath)
+        {
+            var dataDirs = Directory.GetDirectories(dirPath);
+
+            foreach (var dataDir in dataDirs)
+            {
+                var dirInfo = new DirectoryInfo(dataDir);
+                var dataFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
+
+                foreach (var folder in Directory.GetDirectories(dataDir))
+                {
+                    var currentDataDir = new DirectoryInfo(folder);
+                    switch (currentDataDir.Name)
+                    {
+                        case "About":
+                            dataFolder.About = currentDataDir;
+                            break;
+                        default:
+                            //AnsiConsoleExtensions.Log($"not recognized: {currentDataDir.Name} path:{currentDataDir.ToString()}", "warn");
+                            break;
+                    }
+                }
+
+                LoadedDataFolders.Add(dataFolder);
+            }
+        }
+
         private static void LoadModDirs(string dirPath)
         {
-            var modDirs = Directory.GetDirectories(dirPath);
-
-            foreach (var modDir in modDirs)
+            foreach (var modDir in Directory.GetDirectories(dirPath))
             {
                 var dirInfo = new DirectoryInfo(modDir);
                 var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
+                if (!modFolder.IsValid()) 
+                    AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
 
-                if (!modFolder.IsValid()) AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
-
-
-                var foldersInside = Directory.GetDirectories(modDir);
-
-                foreach (var folder in foldersInside)
+                foreach (var folder in Directory.GetDirectories(modDir))
                 {
                     var currentModDir = new DirectoryInfo(folder);
                     switch (currentModDir.Name)
@@ -218,7 +253,7 @@ namespace RimModdingTools
             }
         }
 
-        private static void ScanForIncompatibleMods()
+        private static void CheckForIncompatibleMods()
         {
             var modNames = new List<string>();
             var modPackages = new List<string>();
