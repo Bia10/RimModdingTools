@@ -17,18 +17,24 @@ namespace RimModdingTools
         private static List<ModFolder> LoadedDataFolders = new();
         private static ModsConfigData LoadedModConfig = new();
 
-        private static void Main()
-        {
-            const string pathToRim = @"C:\Games\RimWorld";
-            const string pathToMods = pathToRim + @"\Mods\";
+        public const string pathToRim = @"C:\Games\RimWorld";
+        public const string pathToMods = pathToRim + @"\Mods\";
 
+        public static void Main()
+        {
             LoadDataDirs(pathToRim + @"\Data\");
             LoadModDirs(pathToMods);
             LoadModConfig();
 
             AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
-            DownloadModsFromSteam(new[] {1854607105}, pathToMods);
+            var idsToDl = new uint[] 
+            {
+                1854607105,
+                2420141361
+            };
+
+            DownloadModsFromSteam(idsToDl);
             //ParseModFolders();
             //RenameWorkshopIdToModName();
             //CheckForIncompatibleMods();
@@ -81,16 +87,22 @@ namespace RimModdingTools
             }
         }
 
-        public static void DownloadModsFromSteam(int[] workshopId, string forcedDir)
+        public static void DownloadModsFromSteam(IEnumerable<uint> workshopIds)
         {
-           var cmdArgs = ProcLauncher.CmdArguments.AnonLogin 
-                         + ProcLauncher.CmdArguments.ForceInstallDir + forcedDir
-                         + ProcLauncher.CmdArguments.DownloadWorkshopItem 
-                         + ProcLauncher.CmdArguments.RimAppId + workshopId[0] 
-                         + ProcLauncher.CmdArguments.Quit;
+            var dllPath = @"C:\steamcmd\steamapps\workshop\content\" + ProcLauncher.CmdArguments.RimAppId.Trim() + @"\";
 
-           var steamCmd = new ProcLauncher(@"C:\steamcmd\steamcmd.exe", cmdArgs);
-           steamCmd.Launch();
+            var downloadArgs = workshopIds.Aggregate("", (current, id) =>
+                current + ProcLauncher.CmdArguments.DownloadWorkshopItem + ProcLauncher.CmdArguments.RimAppId + id);
+            var cmdArgs = ProcLauncher.CmdArguments.AnonLogin + downloadArgs + ProcLauncher.CmdArguments.Quit;
+            var steamCmd = new ProcLauncher(@"C:\steamcmd\steamcmd.exe", cmdArgs); 
+
+            steamCmd.Launch();
+
+            if (ProcLauncher.HasExited())
+            {
+                foreach (var modDir in new DirectoryInfo(dllPath).GetDirectories())
+                    modDir.MoveTo($@"{pathToMods}\{modDir.Name}");
+            }
         }
 
         public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable

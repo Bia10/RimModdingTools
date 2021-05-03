@@ -10,6 +10,7 @@ namespace RimModdingTools
     {
         private static string _exePath;
         private readonly string _cmdArgs;
+        private static bool _finished;
 
         public struct CmdArguments
         {
@@ -59,6 +60,9 @@ namespace RimModdingTools
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
+
+                if (process.HasExited)
+                    _finished = true;
             }
             catch (Exception ex)
             {
@@ -74,6 +78,11 @@ namespace RimModdingTools
         private static void ErrorHandler(object sendingProcess, DataReceivedEventArgs outLine)
         {
             AnsiConsoleExtensions.Log(outLine.Data, "error");
+        }
+
+        public static bool HasExited()
+        {
+            return _finished;
         }
     }
 }
