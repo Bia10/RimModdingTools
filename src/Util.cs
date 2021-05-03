@@ -21,6 +21,13 @@ namespace RimModdingTools
             return string.IsNullOrEmpty(end) ? input[indexOfStart..] : input[indexOfStart..indexOfEnd];
         }
 
+
+        public static bool Contains(string source, string toCheck, StringComparison comp)
+        {
+            return source?.IndexOf(toCheck, comp) >= 0;
+        }
+
+
         public static HttpStatusCode GetUrlStatus(string url, string userAgent)
         {
             var result = default(HttpStatusCode);

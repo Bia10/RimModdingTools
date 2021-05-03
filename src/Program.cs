@@ -82,8 +82,8 @@ namespace RimModdingTools
         public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable
         {
             const string rimSearchUri = @"https://steamcommunity.com/workshop/browse/?appid=294100&searchtext=";
-            var packageIdSplit = packageId.Replace(".", "+");
-            var modSearchUri = rimSearchUri + packageIdSplit;
+            var packageIdSearch = packageId.Replace(".", "+");
+            var modSearchUri = rimSearchUri + packageIdSearch;
             var result = Util.GetUrlStatus(modSearchUri,
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
             if (result != HttpStatusCode.OK)
@@ -95,18 +95,30 @@ namespace RimModdingTools
             var web = new HtmlWeb();
             var document = web.Load(modSearchUri);
 
+            var packageNameFormat = packageIdSearch.Split("+");
+
             foreach (var modTitle in document.DocumentNode
                 .SelectNodes("//div[contains(@class, 'workshopItemTitle ellipsis')]"))
             {
                 var modName = modTitle.InnerHtml;
                 var modNameNoWs = modName.Replace(" ", "");
-                if (!packageIdSplit.Contains(modName) && !packageIdSplit.Contains(modNameNoWs)) continue;
 
-                var hrefNode = modTitle.ParentNode.OuterHtml;
-                var workshopId = Util.StringBetweenStrings(hrefNode, "?id=", "&");
+                foreach (var str in packageNameFormat)
+                {
+                    var likelyName = packageNameFormat[1];
 
-                AnsiConsoleExtensions.Log($"Likely we have found the workshopId: {workshopId} for mod: {modName} ", "success");
-                return int.Parse(workshopId);
+                    if (Util.Contains(modName, likelyName, StringComparison.InvariantCultureIgnoreCase) 
+                        || Util.Contains(modNameNoWs, likelyName, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        AnsiConsoleExtensions.Log($"likelyName: {likelyName} modName: {modName}", "warn");
+
+                        var hrefNode = modTitle.ParentNode.OuterHtml;
+                        var workshopId = Util.StringBetweenStrings(hrefNode, "?id=", "&");
+
+                        AnsiConsoleExtensions.Log($"Likely we have found the workshopId: {workshopId} for mod: {modName} ", "success");
+                        return int.Parse(workshopId);
+                    }
+                }
             }
 
             AnsiConsoleExtensions.Log("Failed to find the mod among results!", "warn");
