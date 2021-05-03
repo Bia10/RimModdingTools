@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using RimModdingTools.Downloader;
 //using SixLabors.ImageSharp.Processing;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
@@ -28,13 +30,11 @@ namespace RimModdingTools
 
             AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
-            var idsToDl = new uint[] 
-            {
-                1854607105,
-                2420141361
-            };
+            const string url = "github.com/UnlimitedHugs/RimworldHugsLib/releases/latest";
+            DownloadModFromGithub(url);
 
-            DownloadModsFromSteam(idsToDl);
+            //var idsToDl = new uint[] {1854607105, 2420141361};
+            //DownloadModsFromSteam(idsToDl);
             //ParseModFolders();
             //RenameWorkshopIdToModName();
             //CheckForIncompatibleMods();
@@ -86,6 +86,25 @@ namespace RimModdingTools
                 }
             }
         }
+
+        //"https://api.github.com/<GitHubUsername>/<RepoName>/releases/latest"
+        public static void DownloadModFromGithub(string githubUri)
+        {
+            var urlSplit = githubUri.Split("/");
+
+            var httpClient = new HttpClient();
+            var author = urlSplit[1];
+            var repo = urlSplit[2];
+
+            IDownloaderSettings settings = new DownloaderSettings(httpClient, author, repo, true, pathToMods);
+            IDownloader downloader = new Downloader.Downloader(settings);
+
+            downloader.DownloadLatestRelease();
+
+            downloader.DeInit();
+            httpClient.Dispose();
+        }
+
 
         public static void DownloadModsFromSteam(IEnumerable<uint> workshopIds)
         {
