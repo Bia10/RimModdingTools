@@ -10,3 +10,7 @@
 - Download mods from github
 - Update mods
 - Import/Export ModList
+
+## Things to keep in mind
+- there is no restriction on http request generated, repeated searching thru long modlist may be understood as spam by Steam.
+- both Steam and Github API uses annon login, its likely that usage restictions are implied
