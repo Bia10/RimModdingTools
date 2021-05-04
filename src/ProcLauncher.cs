@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
+using Utils.Console;
 
 namespace RimModdingTools
 {
@@ -29,13 +29,13 @@ namespace RimModdingTools
 
         public void Launch()
         {
-            AnsiConsoleExtensions.Log($"Attempt to start:\n {_exePath} || {_cmdArgs}", "info");
+            Extensions.Log($"Attempt to start:\n {_exePath} || {_cmdArgs}", "info");
 
             var exeFile = new FileInfo(_exePath);
             var workDir = exeFile.DirectoryName;
             if (workDir == null)
             {
-                AnsiConsoleExtensions.Log("Work directory null, cannot launch!", "error");
+                Extensions.Log("Work directory null, cannot launch!", "error");
                 return;
             }
 
@@ -72,12 +72,12 @@ namespace RimModdingTools
 
         private static void OutputHandler(object sendingProcess, DataReceivedEventArgs outLine)
         {
-            AnsiConsoleExtensions.Log(outLine.Data, "info");
+            Extensions.Log(outLine.Data, "info");
         }
 
         private static void ErrorHandler(object sendingProcess, DataReceivedEventArgs outLine)
         {
-            AnsiConsoleExtensions.Log(outLine.Data, "error");
+            Extensions.Log(outLine.Data, "error");
         }
     }
 }

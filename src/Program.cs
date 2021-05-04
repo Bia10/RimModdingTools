@@ -9,9 +9,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using Utils.Console;
+using Utils.Net;
 using Utils.String;
 //using SixLabors.ImageSharp.Processing;
-using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
 namespace RimModdingTools
 {
@@ -32,7 +33,7 @@ namespace RimModdingTools
             LoadModDirs(PathToMods);
             LoadModConfig();
 
-            AnsiConsoleExtensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
+            Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
             const string url = "github.com/pardeike/HarmonyRimWorld/releases/latest";
             DownloadModFromGithub(url, PathToMods);
@@ -84,7 +85,7 @@ namespace RimModdingTools
                             break;
 
                         default:
-                            //AnsiConsoleExtensions.Log($"curfilename: {curFile.Name}", "info");
+                            //Extensions.Log($"curfilename: {curFile.Name}", "info");
                             break;
                     }
                 }
@@ -154,11 +155,11 @@ namespace RimModdingTools
             const string rimSearchUri = @"https://steamcommunity.com/workshop/browse/?appid=294100&searchtext=";
             var packageIdSearch = packageId.Replace(".", "+");
             var modSearchUri = rimSearchUri + packageIdSearch;
-            var result = Util.GetUrlStatus(modSearchUri,
+            var result = Web.GetUrlStatus(modSearchUri,
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
             if (result != HttpStatusCode.OK)
             {
-                AnsiConsoleExtensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
+                Extensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
                 return 0;
             }
 
@@ -180,18 +181,18 @@ namespace RimModdingTools
                     if (modName.Contains(likelyName, StringComparison.InvariantCultureIgnoreCase) 
                         || modNameNoWs.Contains(likelyName, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        AnsiConsoleExtensions.Log($"likelyName: {likelyName} modName: {modName}", "warn");
+                        Extensions.Log($"likelyName: {likelyName} modName: {modName}", "warn");
 
                         var hrefNode = modTitle.ParentNode.OuterHtml;
                         var workshopId = hrefNode.StringBetweenStrings("?id=", "&");
 
-                        AnsiConsoleExtensions.Log($"Likely we have found the workshopId: {workshopId} for mod: {modName} ", "success");
+                        Extensions.Log($"Likely we have found the workshopId: {workshopId} for mod: {modName} ", "success");
                         return int.Parse(workshopId);
                     }
                 }
             }
 
-            AnsiConsoleExtensions.Log("Failed to find the mod among results!", "warn");
+            Extensions.Log("Failed to find the mod among results!", "warn");
             return 0;
         }
 
@@ -207,7 +208,7 @@ namespace RimModdingTools
             foreach (var notFoundMod in modsNotFound)
             {
                 if (notFoundMod.Equals("ludeon.rimworld") || notFoundMod.Equals("ludeon.rimworld.royalty")) continue;
-                AnsiConsoleExtensions.Log($"Modlist references mod not found localy: {notFoundMod}", "warn");
+                Extensions.Log($"Modlist references mod not found localy: {notFoundMod}", "warn");
                 var response = AnsiConsole.Confirm("[green]Would you like to download missing mods?[/]:");
 
                 if (response)
@@ -260,17 +261,17 @@ namespace RimModdingTools
                 if (dependencyId.Equals(rimCore) || dependencyId.Equals(rimRoyalty))
                 {
                     if (!dataPackageIds.Contains(rimCore) || !dataPackageIds.Contains(rimRoyalty))
-                        AnsiConsoleExtensions.Log($"Core dependency not found: {dependencyId}", "warn");
+                        Extensions.Log($"Core dependency not found: {dependencyId}", "warn");
                     continue;
                 }
-                AnsiConsoleExtensions.Log($"Mod dependency not found: {dependencyId}", "warn");
+                Extensions.Log($"Mod dependency not found: {dependencyId}", "warn");
             }
         }
 
         private static void CheckForOutdatedMods()
         {
             foreach (var modFolder in _loadedModFolders.Where(modFolder => modFolder.IsOutdated())) 
-                AnsiConsoleExtensions.Log($"Outdated mod: {modFolder.Name}", "info");
+                Extensions.Log($"Outdated mod: {modFolder.Name}", "info");
         }
 
         private static void LoadDataDirs(string dirPath)
@@ -291,7 +292,7 @@ namespace RimModdingTools
                             dataFolder.About = currentDataDir;
                             break;
                         default:
-                            //AnsiConsoleExtensions.Log($"not recognized: {currentDataDir.Name} path:{currentDataDir.ToString()}", "warn");
+                            //Extensions.Log($"not recognized: {currentDataDir.Name} path:{currentDataDir.ToString()}", "warn");
                             break;
                     }
                 }
@@ -307,7 +308,7 @@ namespace RimModdingTools
                 var dirInfo = new DirectoryInfo(modDir);
                 var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
                 if (!modFolder.IsValid()) 
-                    AnsiConsoleExtensions.Log($"Invalid mod: {modFolder.Name}", "info");
+                    Extensions.Log($"Invalid mod: {modFolder.Name}", "info");
 
                 foreach (var folder in Directory.GetDirectories(modDir))
                 {
@@ -354,7 +355,7 @@ namespace RimModdingTools
                             break;
 
                         default:
-                            //AnsiConsoleExtensions.Log($"not recognized: {currentModDir.Name} path:{currentModDir.ToString()}", "warn");
+                            //Extensions.Log($"not recognized: {currentModDir.Name} path:{currentModDir.ToString()}", "warn");
                             break;
                     }
                 }
@@ -376,7 +377,7 @@ namespace RimModdingTools
                     if (modName.Contains(@char))
                         modName = modName.Replace(@char, "");
                 
-                AnsiConsoleExtensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
+                Extensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
                 modFolder.Name = modName;
                 Util.RenameFolder(modFolder.Path, modName);
             }
@@ -413,7 +414,7 @@ namespace RimModdingTools
                     {
                         if (incompatibleName.Equals(modPackage))
                         {
-                            AnsiConsoleExtensions.Log($"Incompatible mods found! Mod1: {modName} with Mod2: {curModName}", "warn");
+                            Extensions.Log($"Incompatible mods found! Mod1: {modName} with Mod2: {curModName}", "warn");
                         }
                     }
                 }

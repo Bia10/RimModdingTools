@@ -1,5 +1,4 @@
 ﻿using Microsoft.Language.Xml;
-using RimModdingTools.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,7 +53,7 @@ namespace RimModdingTools.XmlDocuments
             if (withDescription) modstr += $" \n\t\t\t Description: {Description[..Math.Min(Description.Length, 100)]}";
             modstr += "\n\t\t\t";
 
-            AnsiConsoleExtensions.Log(modstr, "info");
+            Utils.Console.Extensions.Log(modstr, "info");
         }
 
         public string GetSupportedVersions()

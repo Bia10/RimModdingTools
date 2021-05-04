@@ -1,7 +1,7 @@
-﻿using RimModdingTools.Utils;
-using RimModdingTools.XmlDocuments;
+﻿using RimModdingTools.XmlDocuments;
 using System.IO;
 using System.Linq;
+using Utils.Console;
 
 namespace RimModdingTools
 {
@@ -41,7 +41,7 @@ namespace RimModdingTools
         {
             var versionFile = Directory.GetFiles(About.Parent.Parent.Parent.FullName, "Version.txt").First();
             if (versionFile == "" || !versionFile.Equals(new FileInfo(versionFile).FullName))
-                AnsiConsoleExtensions.Log("Version file not found in game dir!","warn");
+                Extensions.Log("Version file not found in game dir!","warn");
 
             var versionString = File.ReadAllText(versionFile);
             var majorAndMinor = versionString.Substring(0, 3);

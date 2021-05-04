@@ -6,11 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Utils\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Bia10.Utils" Version="1.0.0" />
+    <PackageReference Include="Bia10.Utils" Version="1.0.2" />
     <PackageReference Include="GuiLabs.Language.Xml" Version="1.2.46" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.33" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

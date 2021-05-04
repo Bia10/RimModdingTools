@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using RimModdingTools.Utils;
 using Semver;
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Utils.Console;
 
 namespace RimModdingTools.Downloader
 {
@@ -65,7 +65,7 @@ namespace RimModdingTools.Downloader
                         }
                         catch (Exception ex)
                         {
-                            AnsiConsoleExtensions.Log($"exception ex: {ex}" , "warn");
+                            Extensions.Log($"exception ex: {ex}" , "warn");
                         }
                     }
 
@@ -115,12 +115,12 @@ namespace RimModdingTools.Downloader
                 _assetName = Path.GetFileName(assetUrl);
                 var path = Path.Combine(_settings.DownloadDirPath, _assetName);
                 using var client = new WebClient();
-                AnsiConsoleExtensions.Log($"Downloading: {assetUrl} toPath: {path}", "info");
+                Extensions.Log($"Downloading: {assetUrl} toPath: {path}", "info");
                 client.DownloadFile(new Uri(assetUrl), path);
             }
             catch (Exception ex)
             {
-                AnsiConsoleExtensions.Log($"Failed downloading: {assetUrl} reason: {ex.Message}", "warn");
+                Extensions.Log($"Failed downloading: {assetUrl} reason: {ex.Message}", "warn");
                 throw new Exception("Assets download failed.");
             }
         }
@@ -162,7 +162,7 @@ namespace RimModdingTools.Downloader
                     break;
 
                 default:
-                    AnsiConsoleExtensions.Log($"Version unrecognized: {version} count: {count}", "warn");
+                    Extensions.Log($"Version unrecognized: {version} count: {count}", "warn");
                     break;
             }
 
