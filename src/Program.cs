@@ -9,6 +9,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using Utils.String;
 //using SixLabors.ImageSharp.Processing;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
@@ -176,13 +177,13 @@ namespace RimModdingTools
                 {
                     var likelyName = packageNameFormat[1];
 
-                    if (Util.Contains(modName, likelyName, StringComparison.InvariantCultureIgnoreCase) 
-                        || Util.Contains(modNameNoWs, likelyName, StringComparison.InvariantCultureIgnoreCase))
+                    if (modName.Contains(likelyName, StringComparison.InvariantCultureIgnoreCase) 
+                        || modNameNoWs.Contains(likelyName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         AnsiConsoleExtensions.Log($"likelyName: {likelyName} modName: {modName}", "warn");
 
                         var hrefNode = modTitle.ParentNode.OuterHtml;
-                        var workshopId = Util.StringBetweenStrings(hrefNode, "?id=", "&");
+                        var workshopId = hrefNode.StringBetweenStrings("?id=", "&");
 
                         AnsiConsoleExtensions.Log($"Likely we have found the workshopId: {workshopId} for mod: {modName} ", "success");
                         return int.Parse(workshopId);
@@ -366,7 +367,7 @@ namespace RimModdingTools
         {
             foreach (var modFolder in _loadedModFolders)
             {
-                if (!Util.IsDigitOnly(modFolder.Name)) continue;
+                if (!modFolder.Name.IsDigitOnly()) continue;
 
                 var modName = modFolder.LoadModMetaData().Name;
 

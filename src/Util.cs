@@ -1,33 +1,12 @@
 ﻿using RimModdingTools.Utils;
 using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 
 namespace RimModdingTools
 {
     public class Util
     {
-        public static bool IsDigitOnly(string str)
-        {
-            return str.All(char.IsDigit);
-        }
-
-        public static string StringBetweenStrings(string input, string start, string end)
-        {
-            var indexOfStart = input.IndexOf(start, StringComparison.Ordinal) + start.Length;
-            var indexOfEnd = input.IndexOf(end, indexOfStart, StringComparison.Ordinal);
-
-            return string.IsNullOrEmpty(end) ? input[indexOfStart..] : input[indexOfStart..indexOfEnd];
-        }
-
-
-        public static bool Contains(string source, string toCheck, StringComparison comp)
-        {
-            return source?.IndexOf(toCheck, comp) >= 0;
-        }
-
-
         public static HttpStatusCode GetUrlStatus(string url, string userAgent)
         {
             var result = default(HttpStatusCode);

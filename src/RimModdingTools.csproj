@@ -10,12 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Bia10.Utils" Version="1.0.0" />
     <PackageReference Include="GuiLabs.Language.Xml" Version="1.2.46" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.33" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="semver" Version="2.0.6" />
-    <PackageReference Include="Spectre.Console" Version="0.39.0" />
-    <PackageReference Include="Spectre.Console.ImageSharp" Version="0.39.0" />
+    <PackageReference Include="Spectre.Console" Version="0.39.1-preview.0.13" />
+    <PackageReference Include="Spectre.Console.ImageSharp" Version="0.39.1-preview.0.13" />
   </ItemGroup>
 
 </Project>
