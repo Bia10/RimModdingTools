@@ -16,23 +16,25 @@ namespace RimModdingTools
 {
     static class Program
     {
-        private static List<ModFolder> LoadedModFolders = new();
-        private static List<ModFolder> LoadedDataFolders = new();
-        private static ModsConfigData LoadedModConfig = new();
+        private static List<ModFolder> _loadedModFolders = new();
+        private static List<ModFolder> _loadedDataFolders = new();
+        private static ModsConfigData _loadedModConfig = new();
 
-        public const string pathToRim = @"C:\Games\RimWorld";
-        public const string pathToMods = pathToRim + @"\Mods\";
+        private const string PathToRim = @"C:\Games\RimWorld";
+        private const string PathToData = PathToRim + @"\Data\";
+        private const string PathToMods = PathToRim + @"\Mods\";
+        private const string PathToSteamCmd = @"C:\steamcmd\";
 
         public static void Main()
         {
-            LoadDataDirs(pathToRim + @"\Data\");
-            LoadModDirs(pathToMods);
+            LoadDataDirs(PathToData);
+            LoadModDirs(PathToMods);
             LoadModConfig();
 
-            AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
+            AnsiConsoleExtensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
             const string url = "github.com/pardeike/HarmonyRimWorld/releases/latest";
-            DownloadModFromGithub(url, pathToMods);
+            DownloadModFromGithub(url, PathToMods);
 
             //var idsToDl = new uint[] {1854607105, 2420141361};
             //DownloadModsFromSteam(idsToDl);
@@ -46,7 +48,7 @@ namespace RimModdingTools
 
         public static void ParseModFolders()
         {
-            foreach (var modFolders in LoadedModFolders)
+            foreach (var modFolders in _loadedModFolders)
             {
                 var modFiles = Directory.GetFiles(modFolders.About.FullName);
                 foreach (var file in modFiles)
@@ -130,19 +132,19 @@ namespace RimModdingTools
 
         public static void DownloadModsFromSteam(IEnumerable<uint> workshopIds)
         {
-            var dllPath = @"C:\steamcmd\steamapps\workshop\content\" + ProcLauncher.CmdArguments.RimAppId.Trim() + @"\";
+            var dllPath = PathToSteamCmd + @"steamapps\workshop\content\" + ProcLauncher.CmdArguments.RimAppId.Trim() + @"\";
 
             var downloadArgs = workshopIds.Aggregate("", (current, id) =>
                 current + ProcLauncher.CmdArguments.DownloadWorkshopItem + ProcLauncher.CmdArguments.RimAppId + id);
             var cmdArgs = ProcLauncher.CmdArguments.AnonLogin + downloadArgs + ProcLauncher.CmdArguments.Quit;
-            var steamCmd = new ProcLauncher(@"C:\steamcmd\steamcmd.exe", cmdArgs); 
+            var steamCmd = new ProcLauncher(PathToSteamCmd + "steamcmd.exe", cmdArgs); 
 
             steamCmd.Launch();
 
-            if (ProcLauncher.HasExited())
+            if (steamCmd.Finished)
             {
                 foreach (var modDir in new DirectoryInfo(dllPath).GetDirectories())
-                    modDir.MoveTo($@"{pathToMods}\{modDir.Name}");
+                    modDir.MoveTo($@"{PathToMods}\{modDir.Name}");
             }
         }
 
@@ -194,8 +196,8 @@ namespace RimModdingTools
 
         public static void CheckActiveModsAgainstLocalMods()
         {
-            var activeMods = LoadedModConfig.ActiveMods;
-            var localMods = LoadedModFolders.Select(modFolder =>
+            var activeMods = _loadedModConfig.ActiveMods;
+            var localMods = _loadedModFolders.Select(modFolder =>
                 modFolder.LoadModMetaData()).Select(metaData =>
                 metaData.PackageId).ToList();
             var modsNotFound = activeMods.Where(activeMod =>
@@ -223,13 +225,13 @@ namespace RimModdingTools
             var path = Environment.ExpandEnvironmentVariables(pathToLocalLow + pathToConfig + configName);
             var xml = File.ReadAllText(path);
 
-            LoadedModConfig = ModsConfigData.GetFromXml(xml);
+            _loadedModConfig = ModsConfigData.GetFromXml(xml);
         }
 
         public static IEnumerable<string> GetDependenciesPackageIds()
         {
             var result = new List<string>();
-            foreach (var modFolder in LoadedModFolders)
+            foreach (var modFolder in _loadedModFolders)
             {
                 var metaData = modFolder.LoadModMetaData();
                 foreach (var dependency in metaData.ModDependencies)
@@ -244,9 +246,9 @@ namespace RimModdingTools
         public static void CheckIfMissingDependency()
         {
             var dependenciesIds = GetDependenciesPackageIds();
-            var modPackageIds = LoadedModFolders.Select(modFolder => 
+            var modPackageIds = _loadedModFolders.Select(modFolder => 
                 modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
-            var dataPackageIds = LoadedDataFolders.Select(dataFolder =>
+            var dataPackageIds = _loadedDataFolders.Select(dataFolder =>
                 dataFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
 
             foreach (var dependencyId in dependenciesIds.Where(dependencyId => !modPackageIds.Contains(dependencyId)))
@@ -266,7 +268,7 @@ namespace RimModdingTools
 
         private static void CheckForOutdatedMods()
         {
-            foreach (var modFolder in LoadedModFolders.Where(modFolder => modFolder.IsOutdated())) 
+            foreach (var modFolder in _loadedModFolders.Where(modFolder => modFolder.IsOutdated())) 
                 AnsiConsoleExtensions.Log($"Outdated mod: {modFolder.Name}", "info");
         }
 
@@ -293,7 +295,7 @@ namespace RimModdingTools
                     }
                 }
 
-                LoadedDataFolders.Add(dataFolder);
+                _loadedDataFolders.Add(dataFolder);
             }
         }
 
@@ -356,13 +358,13 @@ namespace RimModdingTools
                     }
                 }
 
-                LoadedModFolders.Add(modFolder);
+                _loadedModFolders.Add(modFolder);
             }
         }
 
         private static void RenameWorkshopIdToModName()
         {
-            foreach (var modFolder in LoadedModFolders)
+            foreach (var modFolder in _loadedModFolders)
             {
                 if (!Util.IsDigitOnly(modFolder.Name)) continue;
 
@@ -384,7 +386,7 @@ namespace RimModdingTools
             var modNames = new List<string>();
             var modPackages = new List<string>();
             var modIncompatibleLists = new List<Tuple<List<string>, string>>();
-            foreach (var modFolder in LoadedModFolders)
+            foreach (var modFolder in _loadedModFolders)
             {
                 var modMetaData = modFolder.LoadModMetaData();
                 var modName = modMetaData.Name;
