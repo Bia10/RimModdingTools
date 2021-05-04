@@ -107,12 +107,12 @@ namespace RimModdingTools.Downloader
             {
                 var path = Path.Combine(_settings.DownloadDirPath, Path.GetFileName(assetUrl));
                 using var client = new WebClient();
-                AnsiConsoleExtensions.Log($"Downloading: {assetUrl} toPath:{path}", "info");
+                AnsiConsoleExtensions.Log($"Downloading: {assetUrl} toPath: {path}", "info");
                 client.DownloadFile(new Uri(assetUrl), path);
             }
             catch (Exception ex)
             {
-                AnsiConsoleExtensions.Log($"failed downloading: {assetUrl} reason: {ex.Message}", "warn");
+                AnsiConsoleExtensions.Log($"Failed downloading: {assetUrl} reason: {ex.Message}", "warn");
                 throw new Exception("Assets download failed.");
             }
         }
@@ -122,22 +122,41 @@ namespace RimModdingTools.Downloader
             var releases = GetReleasesAsync().Result;
             var latestRelease = releases.First();
 
-            foreach (var release in releases)
-                if (SemVersion.Compare(release.Value, latestRelease.Value) > 0)
-                    latestRelease = release;
+            foreach (var release in releases.Where(release =>
+                SemVersion.Compare(release.Value, latestRelease.Value) > 0))
+                latestRelease = release;
 
             return latestRelease;
         }
 
-        //Todo: no conformity to semver is enforced
         private static string CleanVersion(string version)
         {
+            var count = version.Count(@char => @char == '.');
             var cleanedVersion = version.StartsWith("v") ? version[1..] : version;
-            var buildDelimiterIndex = cleanedVersion.LastIndexOf("-", StringComparison.Ordinal);
 
-            cleanedVersion = buildDelimiterIndex > 0
-                ? cleanedVersion[..buildDelimiterIndex]
-                : cleanedVersion;
+            switch (count)
+            {
+                case 2:
+                    var buildDelimiterIndex = cleanedVersion.LastIndexOf("-", StringComparison.Ordinal);
+
+                    cleanedVersion = buildDelimiterIndex > 0
+                        ? cleanedVersion[..buildDelimiterIndex]
+                        : cleanedVersion;
+                    break;
+                case 3:
+                    var splitVersion = cleanedVersion.Split(".");
+
+                    var major = splitVersion[0];
+                    var minor = splitVersion[1];
+                    var patch = splitVersion[2];
+
+                    cleanedVersion = major + "." + minor + "." + patch;
+                    break;
+
+                default:
+                    AnsiConsoleExtensions.Log($"Version unrecognized: {version} count: {count}", "warn");
+                    break;
+            }
 
             return cleanedVersion;
         }
@@ -176,7 +195,8 @@ namespace RimModdingTools.Downloader
                     break;
                 default:
                 {
-                    if (statusCode != HttpStatusCode.OK) throw new Exception("GitHub API call failed.");
+                    if (statusCode != HttpStatusCode.OK) 
+                        throw new Exception("GitHub API call failed.");
                     break;
                 }
             }

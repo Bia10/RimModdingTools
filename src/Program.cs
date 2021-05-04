@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using RimModdingTools.Downloader;
 using RimModdingTools.XmlDocuments;
 using Spectre.Console;
 using System;
@@ -7,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using RimModdingTools.Downloader;
 //using SixLabors.ImageSharp.Processing;
 using AnsiConsoleExtensions = RimModdingTools.Utils.AnsiConsoleExtensions;
 
@@ -30,8 +30,8 @@ namespace RimModdingTools
 
             AnsiConsoleExtensions.Log($"DataFolders loaded: {LoadedDataFolders.Count}  ModFolders loaded: {LoadedModFolders.Count} ModConfig active mods: {LoadedModConfig.ActiveMods.Count}", "warn");
 
-            const string url = "github.com/UnlimitedHugs/RimworldHugsLib/releases/latest";
-            DownloadModFromGithub(url);
+            const string url = "github.com/pardeike/HarmonyRimWorld/releases/latest";
+            DownloadModFromGithub(url, pathToMods);
 
             //var idsToDl = new uint[] {1854607105, 2420141361};
             //DownloadModsFromSteam(idsToDl);
@@ -88,7 +88,7 @@ namespace RimModdingTools
         }
 
         //"https://api.github.com/<GitHubUsername>/<RepoName>/releases/latest"
-        public static void DownloadModFromGithub(string githubUri)
+        public static void DownloadModFromGithub(string githubUri, string outputPath)
         {
             var urlSplit = githubUri.Split("/");
 
@@ -96,15 +96,21 @@ namespace RimModdingTools
             var author = urlSplit[1];
             var repo = urlSplit[2];
 
-            IDownloaderSettings settings = new DownloaderSettings(httpClient, author, repo, true, pathToMods);
+            IDownloaderSettings settings = new DownloaderSettings(httpClient, author, repo, true, outputPath);
             IDownloader downloader = new Downloader.Downloader(settings);
 
             downloader.DownloadLatestRelease();
 
             downloader.DeInit();
             httpClient.Dispose();
+
+            //Todo: unzip + remove wrap/zip archive
         }
 
+        //Todo: What if mod has no release?
+        //download repo
+        //compile src via devenv.exe
+        //create modFolder from compiled src
 
         public static void DownloadModsFromSteam(IEnumerable<uint> workshopIds)
         {
