@@ -4,5 +4,6 @@
     {
         bool DownloadLatestRelease();
         void DeInit();
+        string GetAssetName();
     }
 }

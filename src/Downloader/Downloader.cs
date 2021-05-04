@@ -17,6 +17,7 @@ namespace RimModdingTools.Downloader
     {
         private readonly string _releasesEndpoint;
         private readonly IDownloaderSettings _settings;
+        private string _assetName; 
 
         public Downloader(IDownloaderSettings settings)
         {
@@ -28,6 +29,11 @@ namespace RimModdingTools.Downloader
         public void DeInit()
         {
             _settings.HTTPClient.DefaultRequestHeaders.Remove("User-Agent");
+        }
+
+        public string GetAssetName()
+        {
+            return !string.IsNullOrEmpty(_assetName) ? _assetName : string.Empty;
         }
 
         private async Task<Dictionary<string, SemVersion>> GetReleasesAsync()
@@ -80,7 +86,8 @@ namespace RimModdingTools.Downloader
                 Thread.Sleep(1);
             }
 
-            foreach (var assetUrl in assetUrls) GetAssetsAsync(assetUrl);
+            foreach (var assetUrl in assetUrls) 
+                GetAssetsAsync(assetUrl);
 
             return true;
         }
@@ -105,7 +112,8 @@ namespace RimModdingTools.Downloader
         {
             try
             {
-                var path = Path.Combine(_settings.DownloadDirPath, Path.GetFileName(assetUrl));
+                _assetName = Path.GetFileName(assetUrl);
+                var path = Path.Combine(_settings.DownloadDirPath, _assetName);
                 using var client = new WebClient();
                 AnsiConsoleExtensions.Log($"Downloading: {assetUrl} toPath: {path}", "info");
                 client.DownloadFile(new Uri(assetUrl), path);

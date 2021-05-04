@@ -5,6 +5,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -101,10 +102,25 @@ namespace RimModdingTools
 
             downloader.DownloadLatestRelease();
 
+            var fullFileName = outputPath + downloader.GetAssetName();
+            if (Directory.Exists(fullFileName.Replace(".zip", string.Empty)))
+                Directory.Delete(fullFileName.Replace(".zip", string.Empty), true);
+
+            try
+            {
+                ZipFile.ExtractToDirectory(fullFileName, outputPath);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.WriteException(ex);
+                throw;
+            }
+
+            if (File.Exists(fullFileName))
+                File.Delete(fullFileName);
+
             downloader.DeInit();
             httpClient.Dispose();
-
-            //Todo: unzip + remove wrap/zip archive
         }
 
         //Todo: What if mod has no release?
