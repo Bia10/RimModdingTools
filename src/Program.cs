@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using Utils.Console;
+using Utils.FileSystem;
 using Utils.Net;
 using Utils.String;
 //using SixLabors.ImageSharp.Processing;
@@ -35,7 +36,7 @@ namespace RimModdingTools
 
             Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
-            const string url = "github.com/pardeike/HarmonyRimWorld/releases/latest";
+            const string url = "github.com/Aviuz/PrisonLabor/releases/latest";
             DownloadModFromGithub(url, PathToMods);
 
             //var idsToDl = new uint[] {1854607105, 2420141361};
@@ -92,7 +93,7 @@ namespace RimModdingTools
             }
         }
 
-        //"https://api.github.com/<GitHubUsername>/<RepoName>/releases/latest"
+        //"api.github.com/<GitHubUsername>/<RepoName>/releases/latest"
         public static void DownloadModFromGithub(string githubUri, string outputPath)
         {
             var urlSplit = githubUri.Split("/");
@@ -105,14 +106,17 @@ namespace RimModdingTools
             IDownloader downloader = new Downloader.Downloader(settings);
 
             downloader.DownloadLatestRelease();
+            var assetName = downloader.GetAssetName();
+            if(string.IsNullOrEmpty(assetName)) return;
 
-            var fullFileName = outputPath + downloader.GetAssetName();
-            if (Directory.Exists(fullFileName.Replace(".zip", string.Empty)))
-                Directory.Delete(fullFileName.Replace(".zip", string.Empty), true);
+            var fullFileName = outputPath + assetName;
+            var modDirName = fullFileName.Replace(".zip", string.Empty);
+            if (new DirectoryInfo(modDirName).Exists)
+                Directory.Delete(modDirName, true);
 
             try
             {
-                ZipFile.ExtractToDirectory(fullFileName, outputPath);
+                ZipFile.ExtractToDirectory(fullFileName, modDirName);
             }
             catch (Exception ex)
             {
@@ -379,7 +383,9 @@ namespace RimModdingTools
                 
                 Extensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
                 modFolder.Name = modName;
-                Util.RenameFolder(modFolder.Path, modName);
+
+                new DirectoryInfo(modFolder.Path).Rename(modName);
+                //Util.ReddnameFolder(modFolder.Path, modName);
             }
         }
 

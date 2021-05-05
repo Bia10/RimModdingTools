@@ -21,14 +21,14 @@ namespace RimModdingTools.Downloader
 
         public Downloader(IDownloaderSettings settings)
         {
-            _settings = settings.Copy();
-            _settings.HTTPClient.DefaultRequestHeaders.Add("User-Agent", _settings.Repository);
+            _settings = settings;
+            _settings.HttpClient.DefaultRequestHeaders.Add("User-Agent", _settings.Repository);
             _releasesEndpoint = "https://api.github.com/repos/" + _settings.Author + "/" + _settings.Repository + "/releases";
         }
 
         public void DeInit()
         {
-            _settings.HTTPClient.DefaultRequestHeaders.Remove("User-Agent");
+            _settings.HttpClient.DefaultRequestHeaders.Remove("User-Agent");
         }
 
         public string GetAssetName()
@@ -43,7 +43,7 @@ namespace RimModdingTools.Downloader
 
             while (pageNumber != null)
             {
-                var response = await _settings.HTTPClient.GetAsync(new Uri(_releasesEndpoint + "?page=" + pageNumber));
+                var response = await _settings.HttpClient.GetAsync(new Uri(_releasesEndpoint + "?page=" + pageNumber));
                 var contentJson = await response.Content.ReadAsStringAsync();
                 VerifyGitHubApiResponse(response.StatusCode, contentJson);
                 var releasesJson = JsonConvert.DeserializeObject<dynamic>(contentJson);
@@ -96,7 +96,7 @@ namespace RimModdingTools.Downloader
         {
             var assets = new List<string>();
             var assetsEndpoint = _releasesEndpoint + "/" + releaseId + "/assets";
-            var response = await _settings.HTTPClient.GetAsync(new Uri(assetsEndpoint));
+            var response = await _settings.HttpClient.GetAsync(new Uri(assetsEndpoint));
             var contentJson = await response.Content.ReadAsStringAsync();
             VerifyGitHubApiResponse(response.StatusCode, contentJson);
             var assetsJson = JsonConvert.DeserializeObject<dynamic>(contentJson);
