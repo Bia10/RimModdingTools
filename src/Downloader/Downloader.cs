@@ -10,12 +10,15 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Utils.Console;
+using Utils.String;
 
 namespace RimModdingTools.Downloader
 {
+    //TODO: use tags when no rls
     public class Downloader : IDownloader
     {
         private readonly string _releasesEndpoint;
+        private readonly string _tagEndpoint;
         private readonly IDownloaderSettings _settings;
         private string _assetName; 
 
@@ -24,6 +27,7 @@ namespace RimModdingTools.Downloader
             _settings = settings;
             _settings.HttpClient.DefaultRequestHeaders.Add("User-Agent", _settings.Repository);
             _releasesEndpoint = "https://api.github.com/repos/" + _settings.Author + "/" + _settings.Repository + "/releases";
+            _tagEndpoint = "https://api.github.com/repos/" + _settings.Author + "/" + _settings.Repository + "/tags";
         }
 
         public void DeInit()
@@ -47,6 +51,11 @@ namespace RimModdingTools.Downloader
                 var contentJson = await response.Content.ReadAsStringAsync();
                 VerifyGitHubApiResponse(response.StatusCode, contentJson);
                 var releasesJson = JsonConvert.DeserializeObject<dynamic>(contentJson);
+                if (contentJson.Equals("[]")) //The case of no release only tags
+                {
+                    Extensions.Log($"There are no releases!", "warn");
+                    return null;
+                }
 
                 if (releasesJson != null)
                     foreach (var releaseJson in releasesJson)
@@ -98,14 +107,25 @@ namespace RimModdingTools.Downloader
             var assetsEndpoint = _releasesEndpoint + "/" + releaseId + "/assets";
             var response = await _settings.HttpClient.GetAsync(new Uri(assetsEndpoint));
             var contentJson = await response.Content.ReadAsStringAsync();
+
+            if (contentJson.Equals("[]")) //The case of no release only tags
+            {
+                Extensions.Log($"Failed to find any assets for rlsId: {releaseId}", "warn");
+                return null;
+            }
+
             VerifyGitHubApiResponse(response.StatusCode, contentJson);
             var assetsJson = JsonConvert.DeserializeObject<dynamic>(contentJson);
-
             if (assetsJson != null)
+            {
                 foreach (var assetJson in assetsJson)
                     assets.Add(assetJson["browser_download_url"].ToString());
 
-            return assets;
+                return assets;
+            }
+
+            Extensions.Log($"Failed to find any assets for rlsId: {releaseId}", "warn");
+            return null;
         }
 
         private void GetAssetsAsync(string assetUrl)
@@ -139,32 +159,13 @@ namespace RimModdingTools.Downloader
 
         private static string CleanVersion(string version)
         {
-            var count = version.Count(@char => @char == '.');
             var cleanedVersion = version.StartsWith("v") ? version[1..] : version;
+            var splitVersion = cleanedVersion.Split(".");
+            for (var i = 0; i < splitVersion.Length; i++)
+                if (!splitVersion[i].IsDigitOnly())
+                    splitVersion[i] = splitVersion[i].GetDigitsOnly();
 
-            switch (count)
-            {
-                case 2:
-                    var buildDelimiterIndex = cleanedVersion.LastIndexOf("-", StringComparison.Ordinal);
-
-                    cleanedVersion = buildDelimiterIndex > 0
-                        ? cleanedVersion[..buildDelimiterIndex]
-                        : cleanedVersion;
-                    break;
-                case 3:
-                    var splitVersion = cleanedVersion.Split(".");
-
-                    var major = splitVersion[0];
-                    var minor = splitVersion[1];
-                    var patch = splitVersion[2];
-
-                    cleanedVersion = major + "." + minor + "." + patch;
-                    break;
-
-                default:
-                    Extensions.Log($"Version unrecognized: {version} count: {count}", "warn");
-                    break;
-            }
+            cleanedVersion = splitVersion[0] + "." + splitVersion[1] + "." + splitVersion[2];
 
             return cleanedVersion;
         }

@@ -36,7 +36,7 @@ namespace RimModdingTools
 
             Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
-            const string url = "github.com/Aviuz/PrisonLabor/releases/latest";
+            const string url = "github.com/OrionFive/Hospitality";
             DownloadModFromGithub(url, PathToMods);
 
             //var idsToDl = new uint[] {1854607105, 2420141361};
@@ -93,7 +93,7 @@ namespace RimModdingTools
             }
         }
 
-        //"api.github.com/<GitHubUsername>/<RepoName>/releases/latest"
+        //"api.github.com/<GitHubUsername>/<RepoName>"
         public static void DownloadModFromGithub(string githubUri, string outputPath)
         {
             var urlSplit = githubUri.Split("/");
@@ -385,7 +385,6 @@ namespace RimModdingTools
                 modFolder.Name = modName;
 
                 new DirectoryInfo(modFolder.Path).Rename(modName);
-                //Util.ReddnameFolder(modFolder.Path, modName);
             }
         }
 
