@@ -106,7 +106,6 @@ namespace RimModdingTools
             IDownloaderSettings settings = new DownloaderSettings(httpClient, author, repo, true, outputPath);
             IDownloader downloader = new Downloader.Downloader(settings);
 
-
             if (downloader.CheckIfReleasesExist())
             {
                 downloader.DownloadLatestRelease();
@@ -132,7 +131,26 @@ namespace RimModdingTools
             }
             if (downloader.CheckIfTagsExist())
             {
-                //Todo: download latest tag
+                downloader.DownloadLatestTag();
+                var assetName = downloader.GetAssetName();
+                if (string.IsNullOrEmpty(assetName)) return;
+
+                var fullFileName = outputPath + assetName;
+                var modDirName = fullFileName.Replace(".zip", string.Empty);
+                if (new DirectoryInfo(modDirName).Exists)
+                    Directory.Delete(modDirName, true);
+
+                try
+                {
+                    ZipFile.ExtractToDirectory(fullFileName, modDirName);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.WriteException(ex);
+                    throw;
+                }
+
+                if (File.Exists(fullFileName)) File.Delete(fullFileName);
             }
 
             downloader.DeInit();
