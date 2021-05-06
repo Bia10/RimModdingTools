@@ -12,6 +12,7 @@ using System.Net.Http;
 using Utils.Console;
 using Utils.FileSystem;
 using Utils.Net;
+using Utils.Process;
 using Utils.String;
 //using SixLabors.ImageSharp.Processing;
 
@@ -145,20 +146,18 @@ namespace RimModdingTools
 
         public static void DownloadModsFromSteam(IEnumerable<uint> workshopIds)
         {
-            var dllPath = PathToSteamCmd + @"steamapps\workshop\content\" + ProcLauncher.CmdArguments.RimAppId.Trim() + @"\";
+            var dllPath = PathToSteamCmd + @"steamapps\workshop\content\" + CmdArgs.Steam.RimAppId.Trim() + @"\";
 
             var downloadArgs = workshopIds.Aggregate("", (current, id) =>
-                current + ProcLauncher.CmdArguments.DownloadWorkshopItem + ProcLauncher.CmdArguments.RimAppId + id);
-            var cmdArgs = ProcLauncher.CmdArguments.AnonLogin + downloadArgs + ProcLauncher.CmdArguments.Quit;
-            var steamCmd = new ProcLauncher(PathToSteamCmd + "steamcmd.exe", cmdArgs); 
+                current + CmdArgs.Steam.DownloadWorkshopItem + CmdArgs.Steam.RimAppId + id);
+            var cmdArgs = CmdArgs.Steam.AnonLogin + downloadArgs + CmdArgs.Steam.Quit;
 
+            var steamCmd = new Launcher(PathToSteamCmd + "steamcmd.exe", cmdArgs);
             steamCmd.Launch();
 
             if (steamCmd.Finished)
-            {
                 foreach (var modDir in new DirectoryInfo(dllPath).GetDirectories())
                     modDir.MoveTo($@"{PathToMods}\{modDir.Name}");
-            }
         }
 
         public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable
