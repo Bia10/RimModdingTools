@@ -51,9 +51,9 @@ namespace RimModdingTools.Downloader
                 var contentJson = await response.Content.ReadAsStringAsync();
                 VerifyGitHubApiResponse(response.StatusCode, contentJson);
                 var releasesJson = JsonConvert.DeserializeObject<dynamic>(contentJson);
-                if (contentJson.Equals("[]")) //The case of no release only tags
+                if (contentJson.Equals("[]"))
                 {
-                    Extensions.Log($"There are no releases!", "warn");
+                    Extensions.Log("There are no releases!", "warn");
                     return null;
                 }
 
@@ -82,6 +82,30 @@ namespace RimModdingTools.Downloader
             }
 
             return releases;
+        }
+
+        public bool CheckIfReleasesExist()
+        {
+            var response =  _settings.HttpClient.GetAsync(new Uri(_releasesEndpoint + "?page=" + 1)).Result;
+            var contentJson =  response.Content.ReadAsStringAsync().Result;
+            VerifyGitHubApiResponse(response.StatusCode, contentJson);
+
+            if (!contentJson.Equals("[]")) return true;
+
+            Extensions.Log("There are no releases!", "warn");
+            return false;
+        }
+
+        public bool CheckIfTagsExist()
+        {
+            var response = _settings.HttpClient.GetAsync(new Uri(_tagEndpoint + "?page=" + 1)).Result;
+            var contentJson = response.Content.ReadAsStringAsync().Result;
+            VerifyGitHubApiResponse(response.StatusCode, contentJson);
+
+            if (!contentJson.Equals("[]")) return true;
+
+            Extensions.Log("There are no tags!", "warn");
+            return false;
         }
 
         public bool DownloadLatestRelease()

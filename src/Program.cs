@@ -105,27 +105,34 @@ namespace RimModdingTools
             IDownloaderSettings settings = new DownloaderSettings(httpClient, author, repo, true, outputPath);
             IDownloader downloader = new Downloader.Downloader(settings);
 
-            downloader.DownloadLatestRelease();
-            var assetName = downloader.GetAssetName();
-            if(string.IsNullOrEmpty(assetName)) return;
 
-            var fullFileName = outputPath + assetName;
-            var modDirName = fullFileName.Replace(".zip", string.Empty);
-            if (new DirectoryInfo(modDirName).Exists)
-                Directory.Delete(modDirName, true);
-
-            try
+            if (downloader.CheckIfReleasesExist())
             {
-                ZipFile.ExtractToDirectory(fullFileName, modDirName);
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.WriteException(ex);
-                throw;
-            }
+                downloader.DownloadLatestRelease();
+                var assetName = downloader.GetAssetName();
+                if (string.IsNullOrEmpty(assetName)) return;
 
-            if (File.Exists(fullFileName))
-                File.Delete(fullFileName);
+                var fullFileName = outputPath + assetName;
+                var modDirName = fullFileName.Replace(".zip", string.Empty);
+                if (new DirectoryInfo(modDirName).Exists)
+                    Directory.Delete(modDirName, true);
+
+                try
+                {
+                    ZipFile.ExtractToDirectory(fullFileName, modDirName);
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.WriteException(ex);
+                    throw;
+                }
+
+                if (File.Exists(fullFileName)) File.Delete(fullFileName);
+            }
+            if (downloader.CheckIfTagsExist())
+            {
+                //Todo: download latest tag
+            }
 
             downloader.DeInit();
             httpClient.Dispose();
@@ -381,7 +388,7 @@ namespace RimModdingTools
                     if (modName.Contains(@char))
                         modName = modName.Replace(@char, "");
                 
-                Extensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info");
+                Extensions.Log($"Renaming mod: {modFolder.Name} to {modName}", "info", true);
                 modFolder.Name = modName;
 
                 new DirectoryInfo(modFolder.Path).Rename(modName);
