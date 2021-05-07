@@ -14,7 +14,6 @@ using Utils.String;
 
 namespace RimModdingTools.Downloader
 {
-    //TODO: use tags when no rls
     public class Downloader : IDownloader
     {
         private readonly string _releasesEndpoint;
@@ -233,14 +232,11 @@ namespace RimModdingTools.Downloader
         private void GetAssetsAsync(string assetUrl)
         {
             _assetName = Path.GetFileName(assetUrl);
-
-            //https://api.github.com/repos/OrionFive/Hospitality/zipball/refs/tags/B19
             if (assetUrl.Contains("zipball"))
             {
                 assetUrl = assetUrl.Replace("api.", "codeload.");
                 assetUrl = assetUrl.Replace("/repos", string.Empty);
                 assetUrl = assetUrl.Replace("zipball", "legacy.zip");
-                //https://codeload.github.com/OrionFive/Hospitality/legacy.zip/refs/tags/B19
 
                 var urlSplit = assetUrl.Replace("https://codeload.github.com/", string.Empty).Split("/");
                 var modName = urlSplit[1];
@@ -261,7 +257,7 @@ namespace RimModdingTools.Downloader
             }
         }
 
-        private KeyValuePair<string, SemVersion> GetLatestTag() //Todo: fix
+        private KeyValuePair<string, SemVersion> GetLatestTag()
         {
             var tag = GetTagsAsync().Result;
             var latestTag = tag.First();
@@ -297,7 +293,9 @@ namespace RimModdingTools.Downloader
 
             var major = splitVersion[0];
             var minor = splitVersion[1];
-            var patch = !string.IsNullOrEmpty(splitVersion[2])?splitVersion[2]:string.Empty;
+            var patch = !string.IsNullOrEmpty(splitVersion[2])
+                ? splitVersion[2] 
+                : string.Empty;
 
             cleanedVersion = major  + "." + minor + "." + patch;
             return cleanedVersion;
