@@ -64,6 +64,7 @@ namespace RimModdingTools.Downloader
                         {
                             string tagName = releaseJson["name"].ToString();
                             var version = CleanVersion(tagName);
+                            if (string.IsNullOrEmpty(version)) continue;
                             var semVersion = SemVersion.Parse(version);
 
                             tags.Add(version, semVersion);
@@ -163,7 +164,7 @@ namespace RimModdingTools.Downloader
             return true;
         }
 
-        public bool DownloadLatestTag() //TODO: given the tags not symver compatible this will need fix
+        public bool DownloadLatestTag()
         {
             var latestTagId = GetLatestTag().Key;
             var assetUrls = GetAssetUrlsAsync(true, latestTagId).Result;
@@ -200,7 +201,8 @@ namespace RimModdingTools.Downloader
                 if (tagsJson != null)
                 {
                     foreach (var tagJson in tagsJson)
-                        assets.Add(tagJson["zipball_url"].ToString());
+                        if (tagJson["name"].ToString().Equals(releaseId))
+                            assets.Add(tagJson["zipball_url"].ToString());
 
                     return assets;
                 }
@@ -287,14 +289,17 @@ namespace RimModdingTools.Downloader
         {
             var cleanedVersion = version.StartsWith("v") ? version[1..] : version;
             var splitVersion = cleanedVersion.Split(".");
-            if (splitVersion.Length == 0) return string.Empty;
+            if (splitVersion.Length == 0 || splitVersion[0].Equals(cleanedVersion)) return string.Empty;
 
             for (var i = 0; i < splitVersion.Length; i++)
                 if (!splitVersion[i].IsDigitOnly())
                     splitVersion[i] = splitVersion[i].GetDigitsOnly();
 
-            cleanedVersion = splitVersion[0] + "." + splitVersion[1] + "." + splitVersion[2];
+            var major = splitVersion[0];
+            var minor = splitVersion[1];
+            var patch = !string.IsNullOrEmpty(splitVersion[2])?splitVersion[2]:string.Empty;
 
+            cleanedVersion = major  + "." + minor + "." + patch;
             return cleanedVersion;
         }
 
