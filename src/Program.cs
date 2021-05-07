@@ -151,8 +151,18 @@ namespace RimModdingTools
                 }
 
                 if (File.Exists(fullFileName)) File.Delete(fullFileName);
-            }
+                if (Directory.Exists(modDirName))
+                {
+                    var dirInside = Directory.GetDirectories(modDirName).First();
+                    var tempDirPath = outputPath + "temp";
 
+                    if (Directory.Exists(tempDirPath)) Directory.Delete(tempDirPath);
+                    Directory.Move(new DirectoryInfo(dirInside).FullName, tempDirPath);
+
+                    if (Directory.Exists(modDirName)) Directory.Delete(modDirName);
+                    Directory.Move(tempDirPath, modDirName);
+                }
+            }
             downloader.DeInit();
             httpClient.Dispose();
         }
