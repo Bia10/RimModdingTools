@@ -41,10 +41,13 @@ namespace RimModdingTools
             LoadLocalModConfig();
 
             _modsNotInRimThreadidModList = GetModsNotInRimThreadidModList();
-            //_modsFoundInRimThreadidIncompatibleList = GetModsInRimThreadidIncompatibleList();
+            _modsFoundInRimThreadidIncompatibleList = GetModsInRimThreadidIncompatibleList();
 
             foreach (var modFolder in _loadedModFolders)
-                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name}  Compatible?: {Extensions.YesNo(IsRimThreadedCompatible(modFolder, true))}", "warn"); ;
+            {
+                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
+            }
+
 
             // Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
@@ -113,25 +116,75 @@ namespace RimModdingTools
                  !IsPackageIdInModList(mod, modList)).ToList();
         }
 
-        /*public static List<ModFolder> GetModsInRimThreadidIncompatibleList()
+        public static List<ModFolder> GetModsInRimThreadidIncompatibleList()
         {
-            const string rimThreadedIncompatibleList = @"https://github.com/cseelhoff/RimThreaded/wiki/Mod-Compatibility";
+            const string rimThreadedIncompatibleList = @"https://raw.githubusercontent.com/wiki/cseelhoff/RimThreaded/Mod-Compatibility.md";
             var incompatibleList = GetIncompatibleList(rimThreadedIncompatibleList);
 
             return _loadedModFolders.Where(mod =>
                 IsModNameInNamesList(mod, incompatibleList)).ToList();
-        }*/
+        }
+
+        public static ModsConfigData LoadModConfigFromUri(string urlToRaw)
+        {
+            var result = Web.GetUrlStatus(urlToRaw,
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
+
+            if (result != HttpStatusCode.OK)
+                Extensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
+
+            var webClient = new WebClient();
+            var doc = webClient.DownloadString(urlToRaw);
+
+            webClient.Dispose();
+            return LoadModConfig(doc);
+        }
+
+        public static List<string> GetIncompatibleList(string urlToRaw)
+        {
+            var list = new List<string>();
+
+            if (!new FileInfo(PathToMods + "incompatible.txt").Exists)
+            {
+                var result = Web.GetUrlStatus(urlToRaw,
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
+                if (result != HttpStatusCode.OK)
+                    Extensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
+                var webClient = new WebClient();
+                webClient.DownloadFile(urlToRaw, PathToMods + "incompatible.txt");
+                webClient.Dispose();
+            }
+
+            using var sr = new StreamReader(PathToMods + "incompatible.txt");
+            while (sr.Peek() >= 0)
+            {
+                var line = sr.ReadLine();
+                while (line != null && !line.Equals("### A")) line = sr.ReadLine();
+                while (line != null && !line.Equals("------------------------------------------------------"))
+                {
+                    if (line.StartsWith("* ["))
+                    {
+                        var modName = line.StringBetweenStrings("* [", "](");
+                        Extensions.Log($"Adding mod: {modName}", "warn", true);
+                        list.Add(modName);
+                    }
+                    line = sr.ReadLine();
+                }
+            }
+
+            return list;
+        }
 
         public static bool IsRimThreadedCompatible(ModFolder modFolder, bool strictComparison)
         {
             if (_modsFoundInRimThreadidIncompatibleList.Contains(modFolder)) //clearly not compatible
             {
-                Extensions.Log($"Mod not compatible: {modFolder.ModMetaData.Name}", "info");
+                //Extensions.Log($"Mod not compatible: {modFolder.ModMetaData.Name}", "warn", true);
                 return false;
             }
             if (_modsNotInRimThreadidModList.Contains(modFolder) && strictComparison) //unclear
             {
-                Extensions.Log($"Mod likely not compatible: {modFolder.ModMetaData.Name}", "info");
+                //Extensions.Log($"Mod likely not compatible: {modFolder.ModMetaData.Name}", "warn", true);
                 return false;
             }
 
@@ -145,7 +198,12 @@ namespace RimModdingTools
 
         public static bool IsPackageIdInModList(ModFolder modFolder, ModsConfigData modList)
         {
-            return modList.ActiveMods.Contains(modFolder.ModMetaData.PackageId);
+            var packageIdLower = string.Empty;
+
+            if (modFolder.ModMetaData.PackageId != null)
+                packageIdLower = modFolder.ModMetaData.PackageId.ToLower();
+
+            return modList.ActiveMods.Contains(packageIdLower);
         }
 
         //"api.github.com/<GitHubUsername>/<RepoName>"
@@ -240,21 +298,6 @@ namespace RimModdingTools
             if (steamCmd.Finished)
                 foreach (var modDir in new DirectoryInfo(dllPath).GetDirectories())
                     modDir.MoveTo($@"{PathToMods}\{modDir.Name}");
-        }
-
-        public static ModsConfigData LoadModConfigFromUri(string urlToRaw)
-        {
-            var result = Web.GetUrlStatus(urlToRaw,
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
-
-            if (result != HttpStatusCode.OK)
-                Extensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
-
-            var webClient = new WebClient();
-            var doc = webClient.DownloadString(urlToRaw);
-
-            webClient.Dispose();
-            return LoadModConfig(doc);
         }
 
         public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable
