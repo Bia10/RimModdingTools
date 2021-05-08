@@ -9,6 +9,7 @@ namespace RimModdingTools
     {
         public string Name;
         public string Path;
+        public ModMetaData ModMetaData;
         public DirectoryInfo VersionOneZero;
         public DirectoryInfo VersionOneOne;
         public DirectoryInfo VersionOneTwo;
@@ -26,6 +27,11 @@ namespace RimModdingTools
         {
             Name = name;
             Path = path;
+        }
+
+        public void Init()
+        {
+            ModMetaData = LoadModMetaData();
         }
 
         public ModMetaData LoadModMetaData()

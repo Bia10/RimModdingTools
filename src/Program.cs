@@ -29,17 +29,27 @@ namespace RimModdingTools
         private const string PathToMods = PathToRim + @"\Mods\";
         private const string PathToSteamCmd = @"C:\steamcmd\";
 
+        private static List<ModFolder> _modsNotInRimThreadidModList;
+        private static List<ModFolder> _modsFoundInRimThreadidIncompatibleList;
+
         public static void Main()
         {
             LoadDataDirs(PathToData);
             LoadModDirs(PathToMods);
-            LoadModConfig();
 
-            Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
+            foreach (var modFolder in _loadedModFolders) modFolder.Init();
+            LoadLocalModConfig();
 
-            const string url = "github.com/OrionFive/Hospitality";
-            DownloadModFromGithub(url, PathToMods);
+            _modsNotInRimThreadidModList = GetModsNotInRimThreadidModList();
+            //_modsFoundInRimThreadidIncompatibleList = GetModsInRimThreadidIncompatibleList();
 
+            foreach (var modFolder in _loadedModFolders)
+                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name}  Compatible?: {Extensions.YesNo(IsRimThreadedCompatible(modFolder, true))}", "warn"); ;
+
+            // Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
+
+            //const string url = "github.com/OrionFive/Hospitality";
+            //DownloadModFromGithub(url, PathToMods);
             //var idsToDl = new uint[] {1854607105, 2420141361};
             //DownloadModsFromSteam(idsToDl);
             //ParseModFolders();
@@ -92,6 +102,50 @@ namespace RimModdingTools
                     }
                 }
             }
+        }
+
+        public static List<ModFolder> GetModsNotInRimThreadidModList()
+        {
+            const string rimThreadedModlistUri = @"https://raw.githubusercontent.com/pastorismylord/Community-Modpack/main/Community-modpack.xml";
+            var modList = LoadModConfigFromUri(rimThreadedModlistUri);
+
+             return _loadedModFolders.Where(mod => 
+                 !IsPackageIdInModList(mod, modList)).ToList();
+        }
+
+        /*public static List<ModFolder> GetModsInRimThreadidIncompatibleList()
+        {
+            const string rimThreadedIncompatibleList = @"https://github.com/cseelhoff/RimThreaded/wiki/Mod-Compatibility";
+            var incompatibleList = GetIncompatibleList(rimThreadedIncompatibleList);
+
+            return _loadedModFolders.Where(mod =>
+                IsModNameInNamesList(mod, incompatibleList)).ToList();
+        }*/
+
+        public static bool IsRimThreadedCompatible(ModFolder modFolder, bool strictComparison)
+        {
+            if (_modsFoundInRimThreadidIncompatibleList.Contains(modFolder)) //clearly not compatible
+            {
+                Extensions.Log($"Mod not compatible: {modFolder.ModMetaData.Name}", "info");
+                return false;
+            }
+            if (_modsNotInRimThreadidModList.Contains(modFolder) && strictComparison) //unclear
+            {
+                Extensions.Log($"Mod likely not compatible: {modFolder.ModMetaData.Name}", "info");
+                return false;
+            }
+
+            return  true;
+        }
+
+        public static bool IsModNameInNamesList(ModFolder modFolder, IEnumerable<string> modNames)
+        {
+            return modNames.Contains(modFolder.ModMetaData.Name);
+        }
+
+        public static bool IsPackageIdInModList(ModFolder modFolder, ModsConfigData modList)
+        {
+            return modList.ActiveMods.Contains(modFolder.ModMetaData.PackageId);
         }
 
         //"api.github.com/<GitHubUsername>/<RepoName>"
@@ -188,6 +242,21 @@ namespace RimModdingTools
                     modDir.MoveTo($@"{PathToMods}\{modDir.Name}");
         }
 
+        public static ModsConfigData LoadModConfigFromUri(string urlToRaw)
+        {
+            var result = Web.GetUrlStatus(urlToRaw,
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36");
+
+            if (result != HttpStatusCode.OK)
+                Extensions.Log($"Failed to obtain search result page, resultCode: {result}", "warn");
+
+            var webClient = new WebClient();
+            var doc = webClient.DownloadString(urlToRaw);
+
+            webClient.Dispose();
+            return LoadModConfig(doc);
+        }
+
         public static int GetWorkshopIdFromPackageId(string packageId) //TODO: may not be reliable
         {
             const string rimSearchUri = @"https://steamcommunity.com/workshop/browse/?appid=294100&searchtext=";
@@ -238,7 +307,7 @@ namespace RimModdingTools
         {
             var activeMods = _loadedModConfig.ActiveMods;
             var localMods = _loadedModFolders.Select(modFolder =>
-                modFolder.LoadModMetaData()).Select(metaData =>
+                modFolder.ModMetaData).Select(metaData =>
                 metaData.PackageId).ToList();
             var modsNotFound = activeMods.Where(activeMod =>
                 !localMods.Contains(activeMod));
@@ -257,15 +326,21 @@ namespace RimModdingTools
             }
         }
 
-        public static void LoadModConfig()
+        public static void LoadLocalModConfig()
         {
             const string pathToLocalLow = @"%userprofile%\appdata\locallow";
             const string pathToConfig = @"\Ludeon Studios\RimWorld by Ludeon Studios\Config\";
             const string configName = "ModsConfig.xml";
             var path = Environment.ExpandEnvironmentVariables(pathToLocalLow + pathToConfig + configName);
-            var xml = File.ReadAllText(path);
 
-            _loadedModConfig = ModsConfigData.GetFromXml(xml);
+            _loadedModConfig = LoadModConfig(path);
+        }
+
+        public static ModsConfigData LoadModConfig(string xml, string path = "")
+        {
+            if (path.Valid()) xml = File.ReadAllText(path);
+
+            return ModsConfigData.GetFromXml(xml);
         }
 
         public static IEnumerable<string> GetDependenciesPackageIds()
@@ -273,7 +348,7 @@ namespace RimModdingTools
             var result = new List<string>();
             foreach (var modFolder in _loadedModFolders)
             {
-                var metaData = modFolder.LoadModMetaData();
+                var metaData = modFolder.ModMetaData;
                 foreach (var dependency in metaData.ModDependencies)
                 {
                     if (result.Contains(dependency.PackageId)) continue;
@@ -287,9 +362,9 @@ namespace RimModdingTools
         {
             var dependenciesIds = GetDependenciesPackageIds();
             var modPackageIds = _loadedModFolders.Select(modFolder => 
-                modFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+                modFolder.ModMetaData).Select(metaData => metaData.PackageId).ToList();
             var dataPackageIds = _loadedDataFolders.Select(dataFolder =>
-                dataFolder.LoadModMetaData()).Select(metaData => metaData.PackageId).ToList();
+                dataFolder.ModMetaData).Select(metaData => metaData.PackageId).ToList();
 
             foreach (var dependencyId in dependenciesIds.Where(dependencyId => !modPackageIds.Contains(dependencyId)))
             {
@@ -408,7 +483,7 @@ namespace RimModdingTools
             {
                 if (!modFolder.Name.IsDigitOnly()) continue;
 
-                var modName = modFolder.LoadModMetaData().Name;
+                var modName = modFolder.ModMetaData.Name;
 
                 string[] illegalChars = { "<", ">", ":", "\"", "/", "\\", "|", "?", "*"};
                 foreach (var @char in illegalChars)
@@ -429,7 +504,7 @@ namespace RimModdingTools
             var modIncompatibleLists = new List<Tuple<List<string>, string>>();
             foreach (var modFolder in _loadedModFolders)
             {
-                var modMetaData = modFolder.LoadModMetaData();
+                var modMetaData = modFolder.ModMetaData;
                 var modName = modMetaData.Name;
                 var modPackage = modMetaData.PackageId;
                 modNames.Add(modName);

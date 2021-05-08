@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Utils.String;
 
 namespace RimModdingTools.XmlDocuments
 {
@@ -109,7 +110,7 @@ namespace RimModdingTools.XmlDocuments
                         modInfo.PackageId = descendant.Value;
                         break;
                     case "url":
-                        if (descendant.Value == "") break;
+                        if (!descendant.Value.Valid() || descendant.Value == "none") break;
                         modInfo.Url = new Uri(descendant.Value);
                         break;
                     case "supportedVersions":
