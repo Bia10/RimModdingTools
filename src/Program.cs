@@ -28,6 +28,7 @@ namespace RimModdingTools
         private const string PathToData = PathToRim + @"\Data\";
         private const string PathToMods = PathToRim + @"\Mods\";
         private const string PathToSteamCmd = @"C:\steamcmd\";
+        private const string PathToRimThreadidIncompatible = PathToMods + "IncompatibleWithRimThreadid\\";
 
         public static void Main()
         {
@@ -35,11 +36,11 @@ namespace RimModdingTools
             LoadModDirs(PathToMods);
             foreach (var modFolder in _loadedModFolders) modFolder.Init();
             LoadLocalModConfig();
-            // Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
+            //Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
+            //foreach (var modFolder in _loadedModFolders) 
+                //Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
 
-            foreach (var modFolder in _loadedModFolders)
-                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
-            
+            MoveRimthredidIncompatibleMods(PathToRimThreadidIncompatible);
             //const string url = "github.com/OrionFive/Hospitality";
             //DownloadModFromGithub(url, PathToMods);
             //var idsToDl = new uint[] {1854607105, 2420141361};
@@ -50,6 +51,18 @@ namespace RimModdingTools
             //CheckForOutdatedMods();
             //CheckIfMissingDependency();
             //CheckActiveModsAgainstLocalMods();
+        }
+
+        public static void MoveRimthredidIncompatibleMods(string pathTo)
+        {
+            if (!Directory.Exists(pathTo)) Directory.CreateDirectory(pathTo);
+
+            foreach (var modFolder in _loadedModFolders.Where(modFolder =>
+                !IsRimThreadedCompatible(modFolder, true)))
+            {
+                if (Directory.Exists(pathTo + modFolder.Name)) Directory.Delete(pathTo + modFolder.Name, true);
+                Directory.Move(modFolder.Path, pathTo + modFolder.Name);
+            }
         }
 
         public static void ParseModFolders()
@@ -154,7 +167,7 @@ namespace RimModdingTools
                     if (line.StartsWith("* ["))
                     {
                         var modName = line.StringBetweenStrings("* [", "](");
-                        Extensions.Log($"Adding mod: {modName}", "warn", true);
+                        //Extensions.Log($"Adding mod: {modName}", "warn", true);
                         list.Add(modName);
                     }
                     line = sr.ReadLine();
@@ -451,14 +464,15 @@ namespace RimModdingTools
 
         private static void LoadModDirs(string dirPath)
         {
-            foreach (var modDir in Directory.GetDirectories(dirPath))
+            foreach (var modDirPath in Directory.GetDirectories(dirPath))
             {
-                var dirInfo = new DirectoryInfo(modDir);
+                if (modDirPath.Equals(PathToMods + "IncompatibleWithRimThreadid")) continue;
+                var dirInfo = new DirectoryInfo(modDirPath);
                 var modFolder = new ModFolder(dirInfo.Name, dirInfo.FullName);
                 if (!modFolder.IsValid()) 
                     Extensions.Log($"Invalid mod: {modFolder.Name}", "info");
 
-                foreach (var folder in Directory.GetDirectories(modDir))
+                foreach (var folder in Directory.GetDirectories(modDirPath))
                 {
                     var currentModDir = new DirectoryInfo(folder);
                     switch (currentModDir.Name)
