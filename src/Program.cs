@@ -29,28 +29,17 @@ namespace RimModdingTools
         private const string PathToMods = PathToRim + @"\Mods\";
         private const string PathToSteamCmd = @"C:\steamcmd\";
 
-        private static List<ModFolder> _modsNotInRimThreadidModList;
-        private static List<ModFolder> _modsFoundInRimThreadidIncompatibleList;
-
         public static void Main()
         {
             LoadDataDirs(PathToData);
             LoadModDirs(PathToMods);
-
             foreach (var modFolder in _loadedModFolders) modFolder.Init();
             LoadLocalModConfig();
-
-            _modsNotInRimThreadidModList = GetModsNotInRimThreadidModList();
-            _modsFoundInRimThreadidIncompatibleList = GetModsInRimThreadidIncompatibleList();
-
-            foreach (var modFolder in _loadedModFolders)
-            {
-                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
-            }
-
-
             // Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
 
+            foreach (var modFolder in _loadedModFolders)
+                Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
+            
             //const string url = "github.com/OrionFive/Hospitality";
             //DownloadModFromGithub(url, PathToMods);
             //var idsToDl = new uint[] {1854607105, 2420141361};
@@ -177,6 +166,9 @@ namespace RimModdingTools
 
         public static bool IsRimThreadedCompatible(ModFolder modFolder, bool strictComparison)
         {
+            var _modsNotInRimThreadidModList = GetModsNotInRimThreadidModList();
+            var _modsFoundInRimThreadidIncompatibleList = GetModsInRimThreadidIncompatibleList();
+
             if (_modsFoundInRimThreadidIncompatibleList.Contains(modFolder)) //clearly not compatible
             {
                 //Extensions.Log($"Mod not compatible: {modFolder.ModMetaData.Name}", "warn", true);
