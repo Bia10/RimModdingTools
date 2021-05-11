@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bia10.Utils" Version="1.0.4" />
+    <PackageReference Include="Bia10.Utils" Version="1.0.7" />
     <PackageReference Include="GuiLabs.Language.Xml" Version="1.2.46" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.33" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

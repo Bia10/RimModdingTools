@@ -32,19 +32,19 @@ namespace RimModdingTools
 
         public static void Main()
         {
-            LoadDataDirs(PathToData);
-            LoadModDirs(PathToMods);
-            foreach (var modFolder in _loadedModFolders) modFolder.Init();
-            LoadLocalModConfig();
+            //LoadDataDirs(PathToData);
+            //LoadModDirs(PathToMods);
+            //foreach (var modFolder in _loadedModFolders) modFolder.Init();
+            //LoadLocalModConfig();
             //Extensions.Log($"DataFolders loaded: {_loadedDataFolders.Count}  ModFolders loaded: {_loadedModFolders.Count} ModConfig active mods: {_loadedModConfig.ActiveMods.Count}", "warn");
             //foreach (var modFolder in _loadedModFolders) 
                 //Extensions.Log($"modFolder: {modFolder.ModMetaData.Name} Compatible?: {IsRimThreadedCompatible(modFolder, true)}", "info", true);
 
-            MoveRimthredidIncompatibleMods(PathToRimThreadidIncompatible);
+            //MoveRimthredidIncompatibleMods(PathToRimThreadidIncompatible);
             //const string url = "github.com/OrionFive/Hospitality";
             //DownloadModFromGithub(url, PathToMods);
-            //var idsToDl = new uint[] {1854607105, 2420141361};
-            //DownloadModsFromSteam(idsToDl);
+            var idsToDl = new uint[] { 1742151109, 1690978457};
+            DownloadModsFromSteam(idsToDl);
             //ParseModFolders();
             //RenameWorkshopIdToModName();
             //CheckForIncompatibleMods();
